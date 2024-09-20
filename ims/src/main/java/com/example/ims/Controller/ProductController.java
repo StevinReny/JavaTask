@@ -11,6 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -31,6 +32,7 @@ import com.example.ims.Repository.OrderRepository;
 import com.example.ims.Repository.ProductRepository;
 import com.example.ims.Repository.UserRepository;
 import com.example.ims.Services.GetService;
+import com.example.ims.Services.StockValidate;
 
 @RestController
 @RequestMapping("/api/ims")
@@ -38,6 +40,8 @@ public class ProductController {
     
     @Autowired
     private GetService getService;
+    @Autowired
+    private StockValidate stockValidate;
 
     private final ProductRepository productRepository;
     private final CategoryRepository categoryRepository;
@@ -111,7 +115,7 @@ public class ProductController {
                 return ResponseEntity.badRequest().body(Map.of("message","Product with the same username and role already exists")); }
     }   
 
-    @PostMapping("/createOrder")
+    @PutMapping("/sell")
     public ResponseEntity<?> createOrder(@RequestBody Orderdto orderdto) {
     
         Products product = productRepository.findById(orderdto.getProduct_id()).orElse(null);
@@ -123,9 +127,8 @@ public class ProductController {
         if(product==null){
             return ResponseEntity.ok(Map.of("message"," Product not found"));
         }
-
-        
-        Order order=new Order();
+        if(stockValidate.validate(product, orderdto)){
+            Order order=new Order();
         order.setUser(user);
         order.setProduct(product);
         order.setQuantity(orderdto.getQuantity());
@@ -135,6 +138,16 @@ public class ProductController {
         return ResponseEntity.ok().body(Map.of(
             "message", "Order successfully created"
         ));
+        }
+        else{
+            return ResponseEntity.ok().body(Map.of(
+            "message", "No sufficient quantity"
+        ));
+        }
+
+        
+        
+        
     }
 
     @GetMapping("/filterproduct")
