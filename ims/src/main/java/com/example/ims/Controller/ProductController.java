@@ -6,6 +6,7 @@ import java.util.Map;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -100,10 +101,15 @@ public class ProductController {
         // if(existingUser.isPresent()){
         //     return ResponseEntity.badRequest().body(Map.of("message","User name already exists"));
         // }
-        userRepository.save(user);
+        try{
 
-        return ResponseEntity.ok().body(Map.of("message","Successfully inserted"));
-    }
+            userRepository.save(user);
+    
+            return ResponseEntity.ok().body(Map.of("message","Successfully inserted"));
+        }
+        catch (DataIntegrityViolationException e) {            
+                return ResponseEntity.badRequest().body(Map.of("message","Product with the same username and role already exists")); }
+    }   
 
     @PostMapping("/createOrder")
     public ResponseEntity<?> createOrder(@RequestBody Orderdto orderdto) {
