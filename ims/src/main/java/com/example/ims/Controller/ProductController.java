@@ -7,6 +7,7 @@ import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -19,7 +20,11 @@ import com.example.ims.Module.Order;
 import com.example.ims.Module.Orderdto;
 import com.example.ims.Module.Productdto;
 import com.example.ims.Module.Products;
+
 import com.example.ims.Module.User;
+
+import com.example.ims.Module.ResponseMessage;
+
 import com.example.ims.Repository.CategoryRepository;
 import com.example.ims.Repository.OrderRepository;
 import com.example.ims.Repository.ProductRepository;
@@ -154,4 +159,24 @@ public class ProductController {
             }
             
         }
+
+
+
+
+
+
+
+    
+
+        @DeleteMapping("/deleteCategory")
+        public ResponseEntity<ResponseMessage> deleteCategory(@RequestParam Integer categoryId) {
+            return getService.deleteCategory(categoryId);
+        }
+
+        @DeleteMapping("/deleteProduct")
+        public ResponseEntity<ResponseMessage> deleteProduct(@RequestParam Integer productId) {
+            return getService.deleteProduct(productId);
+        }
+
+
 }
