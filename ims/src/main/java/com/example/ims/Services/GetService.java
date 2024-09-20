@@ -1,11 +1,14 @@
 package com.example.ims.Services;
 
+import java.util.List;
+import java.util.Map;
 // import java.util.ArrayList;
 // import java.util.List;
 // import java.util.Optional;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import com.example.ims.Module.Category;
@@ -31,13 +34,24 @@ public class GetService {
             return null;
         }
         else if(category_id!=null){
-            return productRepository.findByCategory_id(category_id);
+            List<Products>temp= productRepository.findByCategory_id(category_id);
+            if(!temp.isEmpty()){
+                return temp;
+            }
+            else{
+                return Map.of("message","Invalid category id");
+            }
         }
         else if (product_id!=null){
            Optional<Products> temp=productRepository.findById(product_id);
-           return temp.orElse(null);
+           if(temp.isPresent()){
+            return temp;
+           }
+           else{
+            return Map.of("message","Invalid product id");
+           }
         }
-        else{return null;}
+        else{return Map.of("message","An error occured");}
         
         
 
