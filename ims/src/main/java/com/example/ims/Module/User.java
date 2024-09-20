@@ -15,8 +15,7 @@ public class User {
     private int userid;
 
     private String role;
-    
-    @Column(unique = true)
+
     private String username;
 
     public String getRole() {
