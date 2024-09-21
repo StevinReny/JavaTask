@@ -11,6 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -182,6 +183,19 @@ public class ProductController {
         @DeleteMapping("/deleteProduct")
         public ResponseEntity<ResponseMessage> deleteProduct(@RequestParam Integer productId) {
             return getService.deleteProduct(productId);
+        }
+
+        @PutMapping("/updateCategory")
+        public ResponseEntity<ResponseMessage> updateCategory(@RequestParam Integer categoryId,
+            @RequestParam String categoryName){
+            try{
+                return getService.updateCategory(categoryId, categoryName);
+            }
+            catch (DataIntegrityViolationException e) {  
+                ResponseMessage responseMessage = new ResponseMessage("Category name already exist");        
+                return ResponseEntity.badRequest().body(responseMessage);
+            }
+            
         }
 
 

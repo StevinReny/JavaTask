@@ -118,5 +118,28 @@ public class GetService {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(responseMessage);
         }
     }
+
+    public ResponseEntity<ResponseMessage> updateCategory(Integer category_id,String category_name) {
+
+        if(categoryRepository.existsById(category_id)){
+            Optional<Category> category=categoryRepository.findById(category_id);
+            if(category.isPresent()){
+                category.get().setCategory_name(category_name);
+                categoryRepository.save(category.get());
+                ResponseMessage responseMessage=new ResponseMessage("Category updated successfully");
+                return ResponseEntity.ok(responseMessage);
+            }
+            else{
+                ResponseMessage responseMessage=new ResponseMessage("Category not found");
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(responseMessage);
+            }
+        }
+
+        else{
+            ResponseMessage responseMessage=new ResponseMessage("Category not found");
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(responseMessage);
+        }
+
+    }
     
 }
