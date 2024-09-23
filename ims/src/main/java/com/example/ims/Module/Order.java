@@ -27,7 +27,7 @@ public class Order {
     @JoinColumn(name = "userid",nullable = false)
     private User user;
 
-    @ManyToOne(cascade = CascadeType.ALL)
+    @ManyToOne()
     @JoinColumn(name="product_id",nullable = false)
     private Products product;
 
