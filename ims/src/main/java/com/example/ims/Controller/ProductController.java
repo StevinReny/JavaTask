@@ -198,5 +198,23 @@ public class ProductController {
             
         }
 
+        @PutMapping("/updateProduct")
+        public ResponseEntity<ResponseMessage> updateCategory(@RequestParam Integer productId,
+            @RequestParam(required = false) String productName,
+            @RequestParam(required = false) Integer categoryId,
+            @RequestParam(required = false) Double price,
+            @RequestParam(required = false) Integer quantity
+
+            ){
+            try{
+                return getService.updateProduct(productId,productName,categoryId,price,quantity);
+            }
+            catch (DataIntegrityViolationException e) {  
+                ResponseMessage responseMessage = new ResponseMessage("Product name already exist");        
+                return ResponseEntity.badRequest().body(responseMessage);
+            }
+            
+        }
+
 
 }
