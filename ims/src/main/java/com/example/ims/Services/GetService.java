@@ -20,8 +20,6 @@ import com.example.ims.Module.ResponseMessage;
 import com.example.ims.Repository.CategoryRepository;
 import com.example.ims.Repository.ProductRepository;
 
-import io.micrometer.core.ipc.http.HttpSender.Response;
-
 @Service
 public class GetService {
 
@@ -118,5 +116,79 @@ public class GetService {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(responseMessage);
         }
     }
+
+    public ResponseEntity<ResponseMessage> updateCategory(Integer category_id,String category_name) {
+
+        if(categoryRepository.existsById(category_id)){
+            Optional<Category> category=categoryRepository.findById(category_id);
+            if(category.isPresent()){
+                category.get().setCategory_name(category_name);
+                categoryRepository.save(category.get());
+                ResponseMessage responseMessage=new ResponseMessage("Category updated successfully");
+                return ResponseEntity.ok(responseMessage);
+            }
+            else{
+                ResponseMessage responseMessage=new ResponseMessage("Category not found");
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(responseMessage);
+            }
+        }
+
+        else{
+            ResponseMessage responseMessage=new ResponseMessage("Category not found");
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(responseMessage);
+        }
+
+    }
+
+    public ResponseEntity<ResponseMessage> updateProduct(Integer productId, String productName, Integer categoryId,
+            Double price, Integer quantity) {
+
+        if (productRepository.existsById(productId)) {
+            Optional<Products> optionalProduct = productRepository.findById(productId);
+            if (optionalProduct.isPresent()) {
+                Products product = optionalProduct.get();
+                
+                if (quantity != null && quantity < 0) {
+                    return ResponseEntity.badRequest()
+                            .body(new ResponseMessage("Quantity cannot be negative"));
+                }
+
+                if (price != null && price < 0) {
+                    return ResponseEntity.badRequest()
+                            .body(new ResponseMessage("Price cannot be negative"));
+                }
+    
+                if (productName != null) {
+                    product.setProduct_name(productName);;
+                }
+                if (categoryId != null) {
+                    Optional<Category> category = categoryRepository.findById(categoryId);
+                    if (category.isPresent()) {
+                        product.setCategory(category.get());
+                    } else {
+                        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                                .body(new ResponseMessage("Category not found"));
+                    }
+                }
+                if (price != null) {
+                    product.setPrice(price);
+                }
+                if (quantity != null) {
+                    product.setQuantity(quantity);
+                }
+
+                // Save the updated product
+                productRepository.save(product);
+                return ResponseEntity.ok(new ResponseMessage("Product updated successfully"));
+            } else {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(new ResponseMessage("Product not found"));
+            }
+        } else {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(new ResponseMessage("Product not found"));
+        }
+    }
+
     
 }
