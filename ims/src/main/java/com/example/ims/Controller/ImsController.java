@@ -143,7 +143,7 @@ public class ImsController {
         if(product==null){
             return ResponseEntity.ok(Map.of("message"," Product not found"));
         }
-        if(user.getRole().equals("buy")){
+        if(user.getRole().equals("buyer")){
 
             if(getService.validate(product, orderdto)){
                 Order order=new Order();
@@ -267,7 +267,7 @@ public class ImsController {
             return ResponseEntity.ok(Map.of("message"," Product not found"));
         }
         // System.out.println(user.getRole());
-        if(user.getRole().equals("sell")){
+        if(user.getRole().equals("seller")){
             if(getService.validate1(product, orderdto)){
                 Order order=new Order();
                 order.setUser(user);
@@ -292,7 +292,5 @@ public class ImsController {
             "message", "No access to restock"
         ));
         }
-
-
     }
 }
