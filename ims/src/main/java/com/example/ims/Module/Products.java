@@ -31,5 +31,7 @@ public class Products {
     private Category category;
 
     private double price;
+
+
     private int quantity;
 }

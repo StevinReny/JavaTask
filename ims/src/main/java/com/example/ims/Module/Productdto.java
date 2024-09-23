@@ -1,10 +1,25 @@
 package com.example.ims.Module;
 
+import jakarta.persistence.Column;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+
 public class Productdto {
+    
+    @Column(nullable=false)
+    @NotBlank(message="It should not be blank")
     private String product_name;
+    
+    @NotNull(message = "It cant be null")
     private int category_id;
+
+    @NotNull(message = "It cant be null")
+    @Min(value = 1,message = "Minimum value of price is 1")
     private double price;
 
+    @NotNull(message = "It cant be null")
+    @Min(value = 0,message = "Minimum value of quantity is 0")
     private int quantity;
     
     public String getProduct_name() {
