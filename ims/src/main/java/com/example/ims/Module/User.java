@@ -17,7 +17,7 @@ public class User {
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     private int userid;
 
-    @Pattern(regexp ="^(buyer|seller)$",message="Invalid role")
+    @Pattern(regexp ="(?i)^(buyer|seller)$",message="Invalid role")
     private String role;
 
     private String username;

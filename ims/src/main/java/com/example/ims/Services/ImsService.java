@@ -2,24 +2,31 @@ package com.example.ims.Services;
 
 import java.util.List;
 import java.util.Map;
-// import java.util.ArrayList;
+import java.util.ArrayList;
 // import java.util.List;
 // import java.util.Optional;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
-
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.validation.BindingResult;
+import java.util.stream.Collectors;
 
 import com.example.ims.Module.Category;
+import com.example.ims.Module.Order;
 import com.example.ims.Module.Orderdto;
+import com.example.ims.Module.Productdto;
 import com.example.ims.Module.Products;
 import com.example.ims.Module.ResponseMessage;
+import com.example.ims.Module.User;
 import com.example.ims.Repository.CategoryRepository;
+import com.example.ims.Repository.OrderRepository;
 import com.example.ims.Repository.ProductRepository;
+import com.example.ims.Repository.UserRepository;
 
 // import io.micrometer.core.ipc.http.HttpSender.Response;
 
@@ -31,6 +38,12 @@ public class ImsService {
 
     @Autowired 
     private CategoryRepository categoryRepository;
+
+    @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
+    private OrderRepository orderRepository;
 
     public Object formatResponse(Integer product_id,Integer category_id){
         
@@ -217,4 +230,195 @@ public class ImsService {
             return true;
         }
     }
+
+    public ResponseEntity<?> createProduct(Productdto product,BindingResult bindingResult){
+        Category category = categoryRepository.findById(product.getCategory_id()).orElse(null);
+        if(category==null){
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message","Category not found"));
+        }
+
+        Optional<Products> existingProduct = productRepository.findByProductName(product.getProduct_name());
+        
+        if (existingProduct.isPresent()) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Product name already exists"));
+        }
+        List<String> errors= new ArrayList<>();
+        if (bindingResult.hasErrors()) {
+            errors.addAll(bindingResult.getAllErrors().stream()
+                    .map(error -> error.getDefaultMessage())
+                    .collect(Collectors.toList()));
+            
+        }
+        if (!errors.isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of("message",String.join(",", errors)));
+        }
+
+        
+
+        Products products=new Products();
+        products.setProduct_name(product.getProduct_name());
+        products.setCategory(category);
+        products.setPrice(product.getPrice());
+        products.setQuantity(product.getQuantity());
+
+        productRepository.save(products);
+
+        return ResponseEntity.ok().body(Map.of(
+            "message", "Product successfully created"
+        ));
+    }
+
+    public ResponseEntity<?> createCategory(Category category){
+        Optional<Category> existingCategory = categoryRepository.findByProductName(category.getCategory_name());
+        
+        if (existingCategory.isPresent()) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Category name already exists"));
+        }
+        categoryRepository.save(category);
+
+        return ResponseEntity.ok().body(Map.of("message","Successfully inserted"));
+
+    }
+
+    public ResponseEntity<?> createUser(User user,BindingResult bindingResult){
+        List<String> errors = new ArrayList<>();
+        try{
+            if (bindingResult.hasErrors()) {
+                errors.addAll(bindingResult.getAllErrors().stream()
+                        .map(error -> error.getDefaultMessage())
+                        .collect(Collectors.toList()));
+                
+            }
+            if (!errors.isEmpty()) {
+                return ResponseEntity.badRequest().body(Map.of("message",String.join(",", errors)));
+            }
+
+            userRepository.save(user);
+    
+            return ResponseEntity.ok().body(Map.of("message","Successfully inserted"));
+        }
+        catch (DataIntegrityViolationException e) {            
+                return ResponseEntity.badRequest().body(Map.of("message","Product with the same username and role already exists")); }
+    }
+
+    public ResponseEntity<?> createOrder(Orderdto orderdto){
+        Products product = productRepository.findById(orderdto.getProduct_id()).orElse(null);
+        User user= userRepository.findById(orderdto.getUserid()).orElse(null);
+
+        if(user==null){
+            return ResponseEntity.ok(Map.of("message"," User not found"));
+        }
+        if(product==null){
+            return ResponseEntity.ok(Map.of("message"," Product not found"));
+        }
+        if(user.getRole().equals("buy")){
+
+            if(validate(product, orderdto)){
+                Order order=new Order();
+                order.setUser(user);
+                order.setProduct(product);
+                order.setQuantity(orderdto.getQuantity());
+    
+                orderRepository.save(order);
+    
+            return ResponseEntity.ok().body(Map.of(
+                "message", "Order successfully created"
+            ));
+            }
+            else{
+                return ResponseEntity.ok().body(Map.of(
+                "message", "No sufficient quantity"
+            ));
+            }
+        }
+        else{
+            return ResponseEntity.ok().body(Map.of(
+            "message", "No access for you to buy"
+        ));
+        }
+    }
+
+    public ResponseEntity<?> getProduct(Integer product_id,Integer category_id){
+
+        Object responseBody =formatResponse(product_id, category_id);
+        
+        if(responseBody==null){
+            return ResponseEntity.ok().body(Map.of("message","Not allowed to enter both"));
+        }
+        else{
+            return ResponseEntity.ok(responseBody);
+        }
+    }
+
+    public ResponseEntity<?> getCategory(Integer category_id){
+        Object responseBody=formatCategoryResponse(category_id);
+        if(responseBody==null){
+            return ResponseEntity.ok().body(Map.of("message","Not Found"));
+        }
+        else{
+            return ResponseEntity.ok(responseBody);
+        }
+    }
+
+    public ResponseEntity<?> restock(Orderdto orderdto){
+        
+        Products product = productRepository.findById(orderdto.getProduct_id()).orElse(null);
+        User user= userRepository.findById(orderdto.getUserid()).orElse(null);
+        
+        if(user==null){
+            return ResponseEntity.ok(Map.of("message"," User not found"));
+        }
+        if(product==null){
+            return ResponseEntity.ok(Map.of("message"," Product not found"));
+        }
+        // System.out.println(user.getRole());
+        if(user.getRole().equals("sell")){
+            if(validate1(product, orderdto)){
+                Order order=new Order();
+                order.setUser(user);
+                order.setProduct(product);
+                order.setQuantity(orderdto.getQuantity());
+    
+                orderRepository.save(order);
+    
+                return ResponseEntity.ok().body(Map.of(
+                    "message", "Order successfully created"
+                ));
+            }
+            else{
+                return ResponseEntity.ok().body(Map.of(
+            "message", "No sufficient quantity to restock"
+        ));
+            }
+        }
+        
+        else{
+            return ResponseEntity.ok().body(Map.of(
+            "message", "No access to restock"
+        ));
+        }
+
+
+    }
+
+    public ResponseEntity<?> updateCategory1(Integer categoryId,String categoryName){
+        try{
+            return updateCategory(categoryId, categoryName);
+        }
+        catch (DataIntegrityViolationException e) {  
+            ResponseMessage responseMessage = new ResponseMessage("Category name already exist");        
+            return ResponseEntity.badRequest().body(responseMessage);
+        }
+    }
+
+    public ResponseEntity<?> updateProduct1(Integer productId,String productName,Integer categoryId,Double price,Integer quantity){
+        try{
+            return updateProduct(productId,productName,categoryId,price,quantity);
+        }
+        catch (DataIntegrityViolationException e) {  
+            ResponseMessage responseMessage = new ResponseMessage("Product name already exist");        
+            return ResponseEntity.badRequest().body(responseMessage);
+        }
+    }
 }
+

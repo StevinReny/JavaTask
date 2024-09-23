@@ -36,6 +36,8 @@ public class Products {
     private Category category;
 
     private double price;
+
+
     private int quantity;
 
     @OneToMany(mappedBy = "product",cascade = CascadeType.REMOVE,orphanRemoval = true)
