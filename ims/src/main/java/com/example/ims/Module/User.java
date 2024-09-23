@@ -1,5 +1,6 @@
 package com.example.ims.Module;
 
+// import jakarta.persistence.Column;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -16,7 +17,7 @@ public class User {
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     private int userid;
 
-    @Pattern(regexp = "buyer|seller", message = "Invalid role")
+    @Pattern(regexp ="^(buy|sell)$",message="Invalid role")
     private String role;
 
     private String username;

@@ -1,13 +1,17 @@
 package com.example.ims.Controller;
 
-// import java.util.List;
+import java.util.List;
 import java.util.Map;
+import java.util.ArrayList;
+
 // import java.util.Optional;
 import java.util.Optional;
 
+// import org.hibernate.mapping.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -31,17 +35,18 @@ import com.example.ims.Repository.CategoryRepository;
 import com.example.ims.Repository.OrderRepository;
 import com.example.ims.Repository.ProductRepository;
 import com.example.ims.Repository.UserRepository;
-import com.example.ims.Services.GetService;
-import com.example.ims.Services.StockValidate;
+import com.example.ims.Services.ImsService;
+import java.util.stream.Collectors;
+// import com.example.ims.Services.StockValidate;
+
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/ims")
-public class ProductController {
+public class ImsController {
     
     @Autowired
-    private GetService getService;
-    @Autowired
-    private StockValidate stockValidate;
+    private ImsService getService;
 
     private final ProductRepository productRepository;
     private final CategoryRepository categoryRepository;
@@ -49,7 +54,7 @@ public class ProductController {
     private final OrderRepository orderRepository;
 
     @Autowired
-    public ProductController(ProductRepository productRepository, CategoryRepository categoryRepository,UserRepository userRepository,OrderRepository orderRepository) {
+    public ImsController(ProductRepository productRepository, CategoryRepository categoryRepository,UserRepository userRepository,OrderRepository orderRepository) {
         this.productRepository = productRepository;
         this.categoryRepository = categoryRepository;
         this.userRepository=userRepository;
@@ -100,12 +105,23 @@ public class ProductController {
     }
 
     @PostMapping("/createuser")
-    public ResponseEntity<?> createUser(@RequestBody User user){
+    public ResponseEntity<?> createUser(@RequestBody @Valid User user,BindingResult bindingResult){
+    
         // Optional<User> existingUser = userRepository.findByUserName(user.getUsername());
         // if(existingUser.isPresent()){
         //     return ResponseEntity.badRequest().body(Map.of("message","User name already exists"));
         // }
+        List<String> errors = new ArrayList<>();
         try{
+            if (bindingResult.hasErrors()) {
+                errors.addAll(bindingResult.getAllErrors().stream()
+                        .map(error -> error.getDefaultMessage())
+                        .collect(Collectors.toList()));
+                
+            }
+            if (!errors.isEmpty()) {
+                return ResponseEntity.badRequest().body(Map.of("message",String.join(",", errors)));
+            }
 
             userRepository.save(user);
     
@@ -127,21 +143,29 @@ public class ProductController {
         if(product==null){
             return ResponseEntity.ok(Map.of("message"," Product not found"));
         }
-        if(stockValidate.validate(product, orderdto)){
-            Order order=new Order();
-        order.setUser(user);
-        order.setProduct(product);
-        order.setQuantity(orderdto.getQuantity());
+        if(user.getRole().equals("buy")){
 
-        orderRepository.save(order);
-
-        return ResponseEntity.ok().body(Map.of(
-            "message", "Order successfully created"
-        ));
+            if(getService.validate(product, orderdto)){
+                Order order=new Order();
+                order.setUser(user);
+                order.setProduct(product);
+                order.setQuantity(orderdto.getQuantity());
+    
+                orderRepository.save(order);
+    
+            return ResponseEntity.ok().body(Map.of(
+                "message", "Order successfully created"
+            ));
+            }
+            else{
+                return ResponseEntity.ok().body(Map.of(
+                "message", "No sufficient quantity"
+            ));
+            }
         }
         else{
             return ResponseEntity.ok().body(Map.of(
-            "message", "No sufficient quantity"
+            "message", "No access for you to buy"
         ));
         }
 
@@ -229,4 +253,46 @@ public class ProductController {
         }
 
 
+
+    @PutMapping("/restock")
+    public ResponseEntity<?> restock(@RequestBody Orderdto orderdto) {
+    
+        Products product = productRepository.findById(orderdto.getProduct_id()).orElse(null);
+        User user= userRepository.findById(orderdto.getUserid()).orElse(null);
+        
+        if(user==null){
+            return ResponseEntity.ok(Map.of("message"," User not found"));
+        }
+        if(product==null){
+            return ResponseEntity.ok(Map.of("message"," Product not found"));
+        }
+        // System.out.println(user.getRole());
+        if(user.getRole().equals("sell")){
+            if(getService.validate1(product, orderdto)){
+                Order order=new Order();
+                order.setUser(user);
+                order.setProduct(product);
+                order.setQuantity(orderdto.getQuantity());
+    
+                orderRepository.save(order);
+    
+                return ResponseEntity.ok().body(Map.of(
+                    "message", "Order successfully created"
+                ));
+            }
+            else{
+                return ResponseEntity.ok().body(Map.of(
+            "message", "No sufficient quantity to restock"
+        ));
+            }
+        }
+        
+        else{
+            return ResponseEntity.ok().body(Map.of(
+            "message", "No access to restock"
+        ));
+        }
+
+
+    }
 }
