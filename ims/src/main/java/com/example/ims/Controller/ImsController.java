@@ -221,6 +221,37 @@ public class ImsController {
             return getService.deleteProduct(productId);
         }
 
+        @PutMapping("/updateCategory")
+        public ResponseEntity<ResponseMessage> updateCategory(@RequestParam Integer categoryId,
+            @RequestParam String categoryName){
+            try{
+                return getService.updateCategory(categoryId, categoryName);
+            }
+            catch (DataIntegrityViolationException e) {  
+                ResponseMessage responseMessage = new ResponseMessage("Category name already exist");        
+                return ResponseEntity.badRequest().body(responseMessage);
+            }
+            
+        }
+
+        @PutMapping("/updateProduct")
+        public ResponseEntity<ResponseMessage> updateCategory(@RequestParam Integer productId,
+            @RequestParam(required = false) String productName,
+            @RequestParam(required = false) Integer categoryId,
+            @RequestParam(required = false) Double price,
+            @RequestParam(required = false) Integer quantity
+
+            ){
+            try{
+                return getService.updateProduct(productId,productName,categoryId,price,quantity);
+            }
+            catch (DataIntegrityViolationException e) {  
+                ResponseMessage responseMessage = new ResponseMessage("Product name already exist");        
+                return ResponseEntity.badRequest().body(responseMessage);
+            }
+            
+        }
+
 
 
     @PutMapping("/restock")
