@@ -69,7 +69,7 @@ public class ImsController {
         @RequestParam(required = false) Integer product_id,
         @RequestParam(required = false) Integer category_id) {
       
-        return getService.getProduct(product_id, category_id);
+        return getService.formatResponse(product_id, category_id);
     }
 
     @GetMapping("/filtercategory")
@@ -97,7 +97,7 @@ public class ImsController {
         public ResponseEntity<?> updateCategory(@RequestParam Integer categoryId,
             @RequestParam String categoryName){
             
-                return getService.updateCategory1(categoryId, categoryName);
+                return getService.updateCategory(categoryId, categoryName);
             
         }
 
@@ -109,7 +109,7 @@ public class ImsController {
             @RequestParam(required = false) Integer quantity
 
             ){
-            return getService.updateProduct1(productId, productName, categoryId, price, quantity);
+            return getService.updateProduct(productId, productName, categoryId, price, quantity);
             
         }
 
