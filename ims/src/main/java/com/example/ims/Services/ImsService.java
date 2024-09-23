@@ -15,15 +15,16 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import com.example.ims.Module.Category;
+import com.example.ims.Module.Orderdto;
 import com.example.ims.Module.Products;
 import com.example.ims.Module.ResponseMessage;
 import com.example.ims.Repository.CategoryRepository;
 import com.example.ims.Repository.ProductRepository;
 
-import io.micrometer.core.ipc.http.HttpSender.Response;
+// import io.micrometer.core.ipc.http.HttpSender.Response;
 
 @Service
-public class GetService {
+public class ImsService {
 
     @Autowired
     private ProductRepository productRepository;
@@ -118,5 +119,28 @@ public class GetService {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(responseMessage);
         }
     }
-    
+
+     public boolean validate(Products product,Orderdto orderdto){
+        if(product.getQuantity()>=orderdto.getQuantity()){
+            int val=product.getQuantity()-orderdto.getQuantity();
+            product.setQuantity(val);
+            return true;
+        }
+        else{
+            return false;
+        }
+    }
+
+
+    public boolean validate1(Products product,Orderdto orderdto){
+        
+        if(orderdto.getQuantity()<=0){ 
+            return false;    
+        }
+        else{
+            int val=product.getQuantity()+orderdto.getQuantity();
+            product.setQuantity(val);
+            return true;
+        }
+    }
 }
