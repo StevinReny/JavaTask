@@ -6,6 +6,7 @@ import java.util.ArrayList;
 // import java.util.List;
 // import java.util.Optional;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -45,6 +46,9 @@ public class ImsService {
 
     @Autowired
     private OrderRepository orderRepository;
+
+    private Map<Integer, Products> productCache = new ConcurrentHashMap<>();    
+    private Map<Integer, Category> categoryCache = new ConcurrentHashMap<>();
 
     public ResponseEntity<?> formatResponse(Integer product_id,Integer category_id){
         
@@ -90,6 +94,7 @@ public class ImsService {
         }
     }
 
+    //Delete Category
     public ResponseEntity<ResponseMessage> deleteCategory(Integer category_id) {
         if(categoryRepository.existsById(category_id)){
             Optional<Category> category=categoryRepository.findById(category_id);
@@ -97,6 +102,7 @@ public class ImsService {
                 Category categoryDetails=category.get();
                 if(productRepository.findByCategory_id(category_id).isEmpty()){
                     categoryRepository.deleteById(category_id);
+                    categoryCache.remove(category_id);
                     ResponseMessage responseMessage=new ResponseMessage("Successfully deleted " +categoryDetails.getCategory_name()+ " from the Inventory management system");
                     return ResponseEntity.ok(responseMessage);
                 }
@@ -117,11 +123,13 @@ public class ImsService {
         }
     }
 
+    //Delete Product
     public ResponseEntity<ResponseMessage> deleteProduct(Integer productId) {
         if(productRepository.existsById(productId)){
             Optional<Products> product=productRepository.findById(productId);
             if(product.isPresent()){
                 productRepository.deleteById(productId);
+                productCache.remove(productId);
                 ResponseMessage responseMessage=new ResponseMessage("Successfully deleted " +product.get().getProduct_name()+ " from the Inventory management system");
                 return ResponseEntity.ok(responseMessage);
             }
@@ -136,6 +144,7 @@ public class ImsService {
         }
     }
 
+    //Update Category
     public ResponseEntity<ResponseMessage> updateCategory(Integer category_id,String category_name) {
         try{
 
@@ -144,6 +153,7 @@ public class ImsService {
                 if(category.isPresent()){
                     category.get().setCategory_name(category_name);
                     categoryRepository.save(category.get());
+                    categoryCache.put(category.get().getCategory_id(),category.get());
                     ResponseMessage responseMessage=new ResponseMessage("Category updated successfully");
                     return ResponseEntity.ok(responseMessage);
                 }
@@ -165,6 +175,7 @@ public class ImsService {
 
     }
 
+    //Update Product
     public ResponseEntity<ResponseMessage> updateProduct(Integer productId, String productName, Integer categoryId,
             Double price, Integer quantity) {
         try{
@@ -209,6 +220,7 @@ public class ImsService {
     
                     // Save the updated product
                     productRepository.save(product);
+                    productCache.put(product.getProduct_id(), product);
                     return ResponseEntity.ok(new ResponseMessage("Product updated successfully"));
                 } else {
                     return ResponseEntity.status(HttpStatus.NOT_FOUND)
@@ -226,7 +238,7 @@ public class ImsService {
     }
 
 
-     public boolean validate(Products product,Orderdto orderdto){
+    public boolean validate(Products product,Orderdto orderdto){
         if(product.getQuantity()>=orderdto.getQuantity()){
             int val=product.getQuantity()-orderdto.getQuantity();
             product.setQuantity(val);
@@ -250,6 +262,7 @@ public class ImsService {
         }
     }
 
+    // Create Product
     public ResponseEntity<?> createProduct(Productdto product,BindingResult bindingResult){
         Category category = categoryRepository.findById(product.getCategory_id()).orElse(null);
         if(category==null){
@@ -272,8 +285,6 @@ public class ImsService {
             return ResponseEntity.badRequest().body(Map.of("message",String.join(", ", errors)));
         }
 
-        
-
         Products products=new Products();
         products.setProduct_name(product.getProduct_name());
         products.setCategory(category);
@@ -281,12 +292,13 @@ public class ImsService {
         products.setQuantity(product.getQuantity());
 
         productRepository.save(products);
-
+        productCache.put(products.getProduct_id(), products);
         return ResponseEntity.ok().body(Map.of(
             "message", "Product successfully created"
         ));
     }
 
+    // Create Category
     public ResponseEntity<?> createCategory(Category category){
         Optional<Category> existingCategory = categoryRepository.findByProductName(category.getCategory_name());
         
@@ -294,11 +306,12 @@ public class ImsService {
             return ResponseEntity.badRequest().body(Map.of("message", "Category name already exists"));
         }
         categoryRepository.save(category);
-
+        categoryCache.put(category.getCategory_id(), category);
         return ResponseEntity.ok().body(Map.of("message","Successfully inserted"));
 
     }
 
+    //Create User
     public ResponseEntity<?> createUser(User user,BindingResult bindingResult){
         List<String> errors = new ArrayList<>();
         try{
@@ -320,6 +333,7 @@ public class ImsService {
                 return ResponseEntity.badRequest().body(Map.of("message","Product with the same username and role already exists")); }
     }
 
+    //Create Order
     public ResponseEntity<?> createOrder(Orderdto orderdto){
         Products product = productRepository.findById(orderdto.getProduct_id()).orElse(null);
         User user= userRepository.findById(orderdto.getUserid()).orElse(null);
@@ -357,7 +371,7 @@ public class ImsService {
         }
     }
 
-
+    // Get Cetegory
     public ResponseEntity<?> getCategory(Integer category_id){
         Object responseBody=formatCategoryResponse(category_id);
         if(responseBody==null){
@@ -368,6 +382,7 @@ public class ImsService {
         }
     }
 
+    //Restock
     public ResponseEntity<?> restock(Orderdto orderdto){
         
         Products product = productRepository.findById(orderdto.getProduct_id()).orElse(null);
@@ -405,8 +420,6 @@ public class ImsService {
             "message", "No access to restock"
         ));
         }
-
-
     }
 
 }
