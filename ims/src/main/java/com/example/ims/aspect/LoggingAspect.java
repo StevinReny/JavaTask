@@ -1,4 +1,4 @@
-package com.example.ims.Aspect;
+package com.example.ims.aspect;
 
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;

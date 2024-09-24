@@ -69,7 +69,7 @@ public class ImsController {
         @RequestParam(required = false) Integer product_id,
         @RequestParam(required = false) Integer category_id) {
       
-        return getService.formatResponse(product_id, category_id);
+        return getService.getProduct(product_id, category_id);
     }
 
     @GetMapping("/filtercategory")
@@ -79,9 +79,6 @@ public class ImsController {
            return getService.getCategory(category_id);
             
         }
-
-
-    
 
         @DeleteMapping("/deleteCategory")
         public ResponseEntity<ResponseMessage> deleteCategory(@RequestParam Integer categoryId) {
