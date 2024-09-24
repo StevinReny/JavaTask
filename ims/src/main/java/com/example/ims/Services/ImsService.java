@@ -333,7 +333,7 @@ public class ImsService {
                 return ResponseEntity.badRequest().body(Map.of("message","Product with the same username and role already exists")); }
     }
 
-    //Create Order
+    //Sell
     public ResponseEntity<?> createOrder(Orderdto orderdto){
         Products product = productRepository.findById(orderdto.getProduct_id()).orElse(null);
         User user= userRepository.findById(orderdto.getUserid()).orElse(null);
@@ -350,10 +350,9 @@ public class ImsService {
                 Order order=new Order();
                 order.setUser(user);
                 order.setProduct(product);
-                order.setQuantity(orderdto.getQuantity());
-    
+                order.setQuantity(orderdto.getQuantity());    
                 orderRepository.save(order);
-    
+                productCache.put(product.getProduct_id(), product);
             return ResponseEntity.ok().body(Map.of(
                 "message", "Order successfully created"
             ));
@@ -403,7 +402,7 @@ public class ImsService {
                 order.setQuantity(orderdto.getQuantity());
     
                 orderRepository.save(order);
-    
+                productCache.put(product.getProduct_id(), product);
                 return ResponseEntity.ok().body(Map.of(
                     "message", "Order successfully created"
                 ));
