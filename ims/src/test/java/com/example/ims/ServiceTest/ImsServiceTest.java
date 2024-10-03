@@ -411,7 +411,7 @@ public class ImsServiceTest {
         productList.add(products);
 
         when(productRepository.findAll()).thenReturn(productList);
-        ResponseEntity responseEntity=imsService.getProduct(null, null);
+        ResponseEntity<?> responseEntity=imsService.getProduct(null, null);
         assertEquals(HttpStatus.OK, responseEntity.getStatusCode());
         assertEquals(productList, responseEntity.getBody());
 
@@ -419,7 +419,7 @@ public class ImsServiceTest {
     }
     @Test
     public void testgetproduct_idsgiven(){
-        ResponseEntity responseEntity=imsService.getProduct(1, 1);
+        ResponseEntity<?> responseEntity=imsService.getProduct(1, 1);
 
         assertEquals("Not allowed to enter both", ((Map<?,?>)responseEntity.getBody()).get("message"));
         assertEquals(HttpStatus.BAD_REQUEST, responseEntity.getStatusCode());
@@ -428,7 +428,7 @@ public class ImsServiceTest {
     @Test
     public void testgetproduct_categoryidGivencategoryNotFound(){
         when(categoryRepository.existsById(1)).thenReturn(false);
-        ResponseEntity responseEntity=imsService.getProduct(null, 1);
+        ResponseEntity<?> responseEntity=imsService.getProduct(null, 1);
         assertEquals(Map.of("message","Category not found"),responseEntity.getBody());
         assertEquals(HttpStatus.NOT_FOUND, responseEntity.getStatusCode());
 
@@ -438,7 +438,7 @@ public class ImsServiceTest {
     public void testgetproduct_categoryidGivenproductNotFound(){
         when(categoryRepository.existsById(1)).thenReturn(true);
         when(productRepository.findByCategory_id(1)).thenReturn(Collections.emptyList());
-        ResponseEntity responseEntity=imsService.getProduct(null, 1);
+        ResponseEntity<?> responseEntity=imsService.getProduct(null, 1);
         assertEquals(Map.of("message","No product under the category"),responseEntity.getBody());
         assertEquals(HttpStatus.NOT_FOUND, responseEntity.getStatusCode());
 
@@ -456,7 +456,7 @@ public class ImsServiceTest {
 
         when(categoryRepository.existsById(1)).thenReturn(true);
         when(productRepository.findByCategory_id(1)).thenReturn(List.of(products));
-        ResponseEntity responseEntity=imsService.getProduct(null,1);
+        ResponseEntity<?> responseEntity=imsService.getProduct(null,1);
         assertEquals(List.of(products), responseEntity.getBody());
         assertEquals(HttpStatus.OK, responseEntity.getStatusCode());
 
@@ -507,7 +507,7 @@ public class ImsServiceTest {
         category.setCategory_id(1);
         when(categoryCache.get(1)).thenReturn(category);
 
-        ResponseEntity responseEntity=imsService.getCategory(1);
+        ResponseEntity<?> responseEntity=imsService.getCategory(1);
 
         assertEquals(HttpStatus.OK, responseEntity.getStatusCode());
         assertEquals(Map.of("message",category), responseEntity.getBody());
