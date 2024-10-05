@@ -1,5 +1,6 @@
 package com.example.ims.ServiceTest;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+// import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.*;
@@ -9,8 +10,6 @@ import static org.mockito.Mockito.*;
 import java.util.*;
 import java.util.concurrent.*;
 
-// import org.hibernate.mapping.List;
-// import org.hibernate.mapping.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 // import org.junit.jupiter.api.TestTemplate;
@@ -31,6 +30,7 @@ import com.example.ims.Module.Order;
 import com.example.ims.Module.Orderdto;
 import com.example.ims.Module.Productdto;
 import com.example.ims.Module.Products;
+import com.example.ims.Module.ResponseMessage;
 import com.example.ims.Module.User;
 import com.example.ims.Repository.CategoryRepository;
 import com.example.ims.Repository.OrderRepository;
@@ -63,6 +63,9 @@ public class ImsServiceTest {
 
     @Mock
     private BindingResult bindingResult;
+
+    @Mock
+    private ResponseMessage responseMessage;
 
     @InjectMocks
     private ImsService imsService;
@@ -215,7 +218,7 @@ public class ImsServiceTest {
         when(userRepository.findById(1)).thenReturn(Optional.empty());
 
         ResponseEntity<?> response=imsService.createOrder(orderdto);
-        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
         assertEquals("User not found", ((Map<?,?>)response.getBody()).get("message"));
         verify(productRepository,times(1)).findById(anyInt());
 
@@ -232,7 +235,7 @@ public class ImsServiceTest {
 
         ResponseEntity<?> response=imsService.createOrder(orderdto);
         assertEquals("Product not found", ((Map<?,?>)response.getBody()).get("message"));
-        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
 
     }
     @Test
@@ -502,7 +505,7 @@ public class ImsServiceTest {
     }
 
     @Test
-    public void testGetCategory_cacheNotFound(){
+    public void testGetCategory_cacheFound(){
         Category category=new Category();
         category.setCategory_id(1);
         when(categoryCache.get(1)).thenReturn(category);
@@ -512,7 +515,298 @@ public class ImsServiceTest {
         assertEquals(HttpStatus.OK, responseEntity.getStatusCode());
         assertEquals(Map.of("message",category), responseEntity.getBody());
     }
-    
 
+    @Test
+    public void testGetCategory_categoryIdnull(){
+        Category category=new Category();
+        category.setCategory_id(2);
+        when(categoryRepository.findAll()).thenReturn(List.of(category));
+        ResponseEntity<?> responseEntity=imsService.getCategory(null);
+        assertEquals(HttpStatus.OK, responseEntity.getStatusCode());
+        assertEquals(List.of(category), responseEntity.getBody());
+    }
+    
+    @Test
+    public void testGetCategory_cacheNotFoundSucess(){
+        Category category=new Category();
+        category.setCategory_id(1);
+        when(categoryCache.get(1)).thenReturn(null);
+        when(categoryRepository.findById(1)).thenReturn(Optional.of(category));
+        ResponseEntity<?> responseEntity=imsService.getCategory(1);
+        assertEquals(Optional.of(category), responseEntity.getBody());
+        assertEquals(HttpStatus.OK, responseEntity.getStatusCode());
+        verify(categoryRepository,times(1)).findById(1);
+        verify(categoryCache,times(1)).put(1, category);
+    }
+
+    @Test
+    public void testGetCategory_categoryidNotFound(){
+        when(categoryCache.get(1)).thenReturn(null);
+        when(categoryRepository.findAll()).thenReturn(List.of());
+        ResponseEntity<?> responseEntity=imsService.getCategory(1);
+        assertEquals(Map.of("message","The category id not found"), responseEntity.getBody());
+        assertEquals(HttpStatus.NOT_FOUND, responseEntity.getStatusCode());
+    }
+
+    @Test
+    public void testDeleteCategory_Success(){
+        Category category=new Category();
+        category.setCategory_id(1);
+        when(categoryRepository.existsById(1)).thenReturn(true);
+        when(categoryRepository.findById(1)).thenReturn(Optional.of(category));
+        when(productRepository.findByCategory_id(1)).thenReturn(List.of());
+        ResponseEntity<?> responseEntity=imsService.deleteCategory(1);
+        ResponseMessage responseMessage= new ResponseMessage("Successfully deleted "+category.getCategory_name()+" from the Inventory management system");
+        assertEquals(responseMessage, responseEntity.getBody());
+        assertEquals(HttpStatus.OK, responseEntity.getStatusCode());
+        verify(categoryRepository,times(1)).deleteById(1);
+        verify(categoryCache,times(1)).remove(1);
+
+    }
+
+    @Test
+    public void testDeleteCategory_productFound(){
+       
+        Category category=new Category();
+        category.setCategory_id(1);
+        Products products=new Products();
+        products.setCategory(category);
+        when(categoryRepository.existsById(1)).thenReturn(true);
+        when(categoryRepository.findById(1)).thenReturn(Optional.of(category));
+        when(productRepository.findByCategory_id(1)).thenReturn(List.of(products));
+
+        ResponseEntity<?> responseEntity=imsService.deleteCategory(1);
+        ResponseMessage responseMessage=new ResponseMessage("Cannot delete " +category.getCategory_name()+ " because it has products under it");
+        assertEquals(responseMessage,responseEntity.getBody());
+        assertEquals(HttpStatus.BAD_REQUEST, responseEntity.getStatusCode());
+        verify(categoryRepository,times(1)).existsById(1);
+        verify(categoryRepository,times(1)).findById(1);
+        verify(productRepository,times(1)).findByCategory_id(1);
+        verify(categoryRepository,times(0)).deleteById(1);
+    }
+
+    @Test
+    public void testDeleteCategory_categoryidNotFound(){
+        when(categoryRepository.existsById(1)).thenReturn(false);
+        ResponseEntity<?> responseEntity=imsService.deleteCategory(1);
+        ResponseMessage responseMessage=new ResponseMessage("Category not found");
+        assertEquals(responseMessage, responseEntity.getBody());
+        assertEquals(HttpStatus.NOT_FOUND, responseEntity.getStatusCode());
+        verify(categoryRepository,times(1)).existsById(1);
+        verify(categoryRepository,times(0)).findById(1);
+
+    }
+
+    @Test
+    public void testDeleteCategory_categoryNotFound(){
+        when(categoryRepository.existsById(1)).thenReturn(true);
+        when(categoryRepository.findById(1)).thenReturn(Optional.empty());
+        ResponseEntity<?> responseEntity=imsService.deleteCategory(1);
+        ResponseMessage responseMessage=new ResponseMessage("Category not found");
+        assertEquals(responseMessage, responseEntity.getBody());
+        assertEquals(HttpStatus.NOT_FOUND, responseEntity.getStatusCode());
+        verify(categoryRepository,times(1)).existsById(1);
+        verify(categoryRepository,times(1)).findById(1);
+        verify(productRepository,times(0)).findByCategory_id(1);
+    }
+
+    @Test
+    public void testDeleteProduct_NotFound(){
+        when(productRepository.existsById(1)).thenReturn(false);
+
+        ResponseMessage responseMessage=new ResponseMessage("Product not found");
+        ResponseEntity<?> responseEntity=imsService.deleteProduct(1);
+
+        assertEquals(responseMessage, responseEntity.getBody());
+        assertEquals(HttpStatus.NOT_FOUND, responseEntity.getStatusCode());
+        // verify(productRepository,times(1)).existsById(1);
+        verify(productRepository,times(1)).findById(1);
+
+    }
+
+    @Test
+    public void testDeleteProduct_Success(){
+        Products products=new Products();
+        products.setProduct_id(1);
+        // when(productRepository.existsById(1)).thenReturn(true);
+        when(productRepository.findById(1)).thenReturn(Optional.of(products));
+
+        ResponseMessage responseMessage=new ResponseMessage("Successfully deleted " +products.getProduct_name()+ " from the Inventory management system");
+        ResponseEntity<?> responseEntity=imsService.deleteProduct(1);
+        assertEquals(responseMessage, responseEntity.getBody());
+        assertEquals(HttpStatus.OK, responseEntity.getStatusCode());
+        // verify(productRepository,times(1)).existsById(1);
+        verify(productRepository,times(1)).findById(1);
+        verify(productRepository,times(1)).deleteById(1);
+        verify(productCache,times(1)).remove(1);
+
+    }
+
+    @Test
+    public void testDeleteProduct_NottFound(){
+        // when(productRepository.existsById(1)).thenReturn(true);
+        when(productRepository.findById(1)).thenReturn(Optional.empty());
+
+        ResponseMessage responseMessage=new ResponseMessage("Product not found");
+        ResponseEntity<?> responseEntity=imsService.deleteProduct(1);
+
+        assertEquals(responseMessage, responseEntity.getBody());
+        assertEquals(HttpStatus.NOT_FOUND, responseEntity.getStatusCode());
+        // verify(productRepository,times(1)).existsById(1);
+        verify(productRepository,times(1)).findById(1);
+
+    }
+
+    
+    @Test
+    public void updateProduct_noUpdation(){
+        // when(productRepository.existsById(1)).thenReturn(true);
+
+        ResponseEntity<?> responseEntity=imsService.updateProduct(1, null, null, null, null);
+        ResponseMessage responseMessage=new ResponseMessage("Nothing to be updated");
+        assertEquals(responseEntity.getBody(), responseMessage);
+        assertEquals(responseEntity.getStatusCode(), HttpStatus.BAD_REQUEST);
+        // verify(productRepository,times(1)).existsById(1);
+    }
+
+    @Test
+    public void updateProduct_QuantityNegative(){
+        Products products=new Products();
+        products.setProduct_id(1);
+        // when(productRepository.existsById(1)).thenReturn(true);
+        when(productRepository.findById(1)).thenReturn(Optional.of(products));
+
+        ResponseEntity<?> responseEntity=imsService.updateProduct(1, null, null, null, -5);
+        ResponseMessage responseMessage=new ResponseMessage("Quantity cannot be negative");
+
+
+        assertEquals(responseEntity.getBody(), responseMessage);
+        assertEquals(responseEntity.getStatusCode(), HttpStatus.BAD_REQUEST);
+    }
+
+    @Test
+    public void updateProduct_PriceNegative(){
+        Products products=new Products();
+        products.setProduct_id(1);
+        // when(productRepository.existsById(1)).thenReturn(true);
+        when(productRepository.findById(1)).thenReturn(Optional.of(products));
+
+        ResponseEntity<?> responseEntity=imsService.updateProduct(1, null, null, -5.0, null);
+        ResponseMessage responseMessage=new ResponseMessage("Price cannot be negative");
+
+
+        assertEquals(responseEntity.getBody(), responseMessage);
+        assertEquals(responseEntity.getStatusCode(), HttpStatus.BAD_REQUEST);
+    }
+
+    @Test
+    public void updateProduct_categoryNotFound(){
+        Products products=new Products();
+        products.setProduct_id(1);
+        // when(productRepository.existsById(1)).thenReturn(true);
+        when(productRepository.findById(1)).thenReturn(Optional.of(products));
+        when(categoryRepository.findById(2)).thenReturn(Optional.empty());
+
+        ResponseEntity<?> responseEntity=imsService.updateProduct(1, null, 2, null, null);
+        ResponseMessage responseMessage=new ResponseMessage("Category not found");
+
+
+        assertEquals(responseEntity.getBody(), responseMessage);
+        assertEquals(responseEntity.getStatusCode(), HttpStatus.NOT_FOUND);
+    }
+
+    @Test
+    public void updateProduct_Sucess(){
+        Products products=new Products();
+        products.setProduct_id(1);
+        // when(productRepository.existsById(1)).thenReturn(true);
+        when(productRepository.findById(1)).thenReturn(Optional.of(products));
+        
+        ResponseEntity<?> responseEntity=imsService.updateProduct(1, "Test product name", null, null, null);
+        ResponseMessage responseMessage=new ResponseMessage("Product updated successfully");
+
+        assertEquals(responseEntity.getStatusCode(), HttpStatus.OK);
+        assertEquals(responseEntity.getBody(), responseMessage);
+        verify(productRepository,times(1)).save(any(Products.class));
+        verify(productCache,times(1)).put(1, products);
+
+
+    } 
+
+    @Test
+    public void testUpdateProduct_Notfound(){
+        when(productRepository.findById(1)).thenReturn(Optional.empty());
+
+        ResponseEntity<?> responseEntity=imsService.updateProduct(1, "Product", null, null, null);
+        ResponseMessage responseMessage=new ResponseMessage("Product not found");
+
+        assertEquals(responseEntity.getStatusCode(), HttpStatus.NOT_FOUND);
+        assertEquals(responseEntity.getBody(), responseMessage);
+        verify(productRepository,never()).save(any(Products.class));
+
+
+    }
+
+    // @Test
+    // public void testUpdateProduct_Integrity() {
+    //     Products products = new Products();  // Use default constructor
+    //     products.setProduct_id(1);
+    //     products.setProduct_name("Product");
+        
+    //     when(productRepository.existsById(1)).thenReturn(true);
+    //     when(productRepository.findById(1)).thenReturn(Optional.of(products));
+    
+    //     doThrow(new DataIntegrityViolationException("Duplicate error")).when(productRepository.save(any(Products.class)));
+        
+    //     ResponseEntity<?> responseEntity = imsService.updateProduct(1, "Product", null, null, null);
+    //     ResponseMessage responseMessage = new ResponseMessage("Product name already exists");
+    
+    //     assertEquals(HttpStatus.BAD_REQUEST, responseEntity.getStatusCode());
+    //     assertEquals(responseMessage, responseEntity.getBody());
+    //     verify(productRepository, never()).save(any(Products.class));
+    // }
+    
+    @Test
+    public void testUpdateCategory_NotFound(){
+        when(categoryRepository.findById(1)).thenReturn(Optional.empty());
+        ResponseEntity<?> responseEntity =imsService.updateCategory(1, null);
+        ResponseMessage responseMessage=new ResponseMessage("Category not found");
+
+        assertEquals(responseEntity.getBody(), responseMessage);
+        assertEquals(responseEntity.getStatusCode(),HttpStatus.NOT_FOUND);
+    }
+
+
+    @Test
+    public void testUpdateCategory_Success(){
+        Category category=new Category();
+        category.setCategory_id(1);
+        // when(categoryRepository.existsById(1)).thenReturn(true);
+        when(categoryRepository.findById(1)).thenReturn(Optional.of(category));
+        ResponseMessage responseMessage=new ResponseMessage("Category updated successfully");
+        ResponseEntity<?> responseEntity=imsService.updateCategory(1,"CategoryNew");
+        assertEquals(responseMessage, responseEntity.getBody());
+        assertEquals(HttpStatus.OK, responseEntity.getStatusCode());
+        verify(categoryRepository,times(1)).save(any(Category.class));
+        verify(categoryCache,times(1)).put(1, category);
+
+    }
+    
+    // @Test
+    // public void testUpdateCategory_Integrity(){
+    //     Category category=new Category();
+    //     category.setCategory_id(1);
+    //     category.setCategory_name("category");
+
+    //     when(categoryRepository.existsById(1)).thenReturn(true);
+    //     when(categoryRepository.findById(1)).thenReturn(Optional.of(category));
+    //     // when(categoryRepository.save(category)).thenThrow(new DataIntegrityViolationException("Category name already exists"));
+    //     ResponseEntity responseEntity= imsService.updateCategory(1,"category");
+    //     // DataIntegrityViolationException e=assertThrows(DataIntegrityViolationException.class , ()->
+    // //    );
+
+    //     assertEquals(responseEntity.getBody(), "Category name already exists");
+    //     // assertEquals(,HttpStatus.BAD_REQUEST);
+    // }
 
 }
