@@ -91,7 +91,7 @@ public class ImsController {
         }
 
         @PutMapping("/updateCategory")
-        public ResponseEntity<?> updateCategory(@RequestParam Integer categoryId,
+        public ResponseEntity<?> updateCategory(@RequestParam(required = true) Integer categoryId,
             @RequestParam String categoryName){
             
                 return getService.updateCategory(categoryId, categoryName);
@@ -99,7 +99,7 @@ public class ImsController {
         }
 
         @PutMapping("/updateProduct")
-        public ResponseEntity<?> updateCategory(@RequestParam Integer productId,
+        public ResponseEntity<?> updateCategory(@RequestParam(required = true) Integer productId,
             @RequestParam(required = false) String productName,
             @RequestParam(required = false) Integer categoryId,
             @RequestParam(required = false) Double price,
