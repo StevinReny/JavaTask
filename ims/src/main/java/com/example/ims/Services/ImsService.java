@@ -3,15 +3,12 @@ package com.example.ims.Services;
 import java.util.List;
 import java.util.Map;
 import java.util.ArrayList;
-// import java.util.List;
-// import java.util.Optional;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
-// import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
@@ -29,8 +26,6 @@ import com.example.ims.Repository.CategoryRepository;
 import com.example.ims.Repository.OrderRepository;
 import com.example.ims.Repository.ProductRepository;
 import com.example.ims.Repository.UserRepository;
-
-// import io.micrometer.core.ipc.http.HttpSender.Response;
 
 @Service
 public class ImsService {
@@ -50,6 +45,77 @@ public class ImsService {
     private ConcurrentHashMap<Integer, Products> productCache = new ConcurrentHashMap<>();  
     private ConcurrentHashMap<Integer, Category> categoryCache = new ConcurrentHashMap<>();
 
+    // Create Product
+    public ResponseEntity<?> createProduct(Productdto product,BindingResult bindingResult){
+        Category category = categoryRepository.findById(product.getCategory_id()).orElse(null);
+        if(category==null){
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message","Category not found"));
+        }
+
+        Optional<Products> existingProduct = productRepository.findByProductName(product.getProduct_name());
+        
+        if (existingProduct.isPresent()) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Product name already exists"));
+        }
+        List<String> errors= new ArrayList<>();
+        if (bindingResult.hasErrors()) {
+            errors.addAll(bindingResult.getAllErrors().stream()
+                    .map(error -> error.getDefaultMessage())
+                    .collect(Collectors.toList()));
+            
+        }
+        if (!errors.isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of("message",String.join(", ", errors)));
+        }
+
+        Products products=new Products();
+        products.setProduct_name(product.getProduct_name());
+        products.setCategory(category);
+        products.setPrice(product.getPrice());
+        products.setQuantity(product.getQuantity());
+
+        productRepository.save(products);
+        productCache.put(products.getProduct_id(), products);
+        return ResponseEntity.ok().body(Map.of(
+            "message", "Product successfully created"
+        ));
+    }
+
+    // Create Category
+    public ResponseEntity<?> createCategory(Category category){
+        Optional<Category> existingCategory = categoryRepository.findByProductName(category.getCategory_name());
+        
+        if (existingCategory.isPresent()) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Category name already exists"));
+        }
+        categoryRepository.save(category);
+        categoryCache.put(category.getCategory_id(), category);
+        return ResponseEntity.ok().body(Map.of("message","Successfully inserted"));
+
+    }
+
+    //Create User
+    public ResponseEntity<?> createUser(User user,BindingResult bindingResult){
+        List<String> errors = new ArrayList<>();
+        try{
+            if (bindingResult.hasErrors()) {
+                errors.addAll(bindingResult.getAllErrors().stream()
+                        .map(error -> error.getDefaultMessage())
+                        .collect(Collectors.toList()));
+                
+            }
+            if (!errors.isEmpty()) {
+                return ResponseEntity.badRequest().body(Map.of("message",String.join(",", errors)));
+            }
+
+            userRepository.save(user);
+    
+            return ResponseEntity.ok().body(Map.of("message","Successfully inserted"));
+        }
+        catch (DataIntegrityViolationException e) {            
+                return ResponseEntity.badRequest().body(Map.of("message","Product with the same username and role already exists")); }
+    }
+
     //Get Product - by productId, categoryId
     public ResponseEntity<?> getProduct(Integer product_id,Integer category_id){
         
@@ -68,22 +134,10 @@ public class ImsService {
                else{
                    return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message","No product under the category"));
                }
-
-            // if(categoryCache.get(category_id)==null){
-            //     List<Products>temp= productRepository.findByCategory_id(category_id);
-            //     if(!temp.isEmpty()){
-            //         return ResponseEntity.ok(temp);
-            //     }
-            //     else{
-            //         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message","Category id not found"));
-            //     }
-
             }
             else{
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message","Category not found"));
             }
-                
-
         }
         else if (product_id!=null){
             if(productCache.get(product_id)==null){
@@ -91,7 +145,6 @@ public class ImsService {
                 if(temp.isPresent()){
                 productCache.put(temp.get().getProduct_id(), temp.get());
                 return ResponseEntity.ok(temp);
-            
            }
            else{
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message","Product id not found"));
@@ -99,18 +152,8 @@ public class ImsService {
         }
            else{
             return ResponseEntity.ok(productCache.get(product_id));
+            
            }
-                    // productCache.put(temp.get().getProduct_id(), temp.get());
-                    // return ResponseEntity.ok(temp);
-                    
-                // }
-                // else{
-                    // return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message","Product id not found"));
-                // }
-            // }
-            // else{
-            //     return ResponseEntity.ok(productCache.get(product_id));
-            // }
         }
         else{
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message","An error occured"));
@@ -135,25 +178,6 @@ public class ImsService {
             return ResponseEntity.ok(Map.of("message",categoryCache.get(category_id)));
         }
     }
-
-//         if(categoryCache.get(category_id)==null){
-//             if(category_id==null){
-//                 return ResponseEntity.ok(categoryRepository.findAll());
-//             }
-//             else{
-//                 Optional<Category> category= categoryRepository.findById(category_id);
-//                 if(category.isPresent()){
-//                     categoryCache.put(category.get().getCategory_id(),category.get());
-//                     return ResponseEntity.ok(category);
-//                 }
-//                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message","The category id not found"));
-//             }
-//         }
-// >>>>>>> 10ebc321f0ad1c3b4e99f518ba74ee45bee3f899
-//         else{
-           
-//         }
-//     }
 
     //Delete Category
     public ResponseEntity<ResponseMessage> deleteCategory(Integer category_id) {
@@ -248,9 +272,6 @@ public class ImsService {
                 Optional<Products> optionalProduct = productRepository.findById(productId);
                 if (optionalProduct.isPresent()) {
                     Products product = optionalProduct.get();
-                    // if(product.getProduct_name().equals(productName)){
-                    //     return ResponseEntity.badRequest().body(new ResponseMessage("Same product name is inserted Try other"));
-                    // }
                     if (quantity != null && quantity < 0) {
                         return ResponseEntity.badRequest()
                                 .body(new ResponseMessage("Quantity cannot be negative"));
@@ -280,7 +301,6 @@ public class ImsService {
                         product.setQuantity(quantity);
                     }
     
-                    // Save the updated product
                     productRepository.save(product);
                     productCache.put(product.getProduct_id(), product);
                     return ResponseEntity.ok(new ResponseMessage("Product updated successfully"));
@@ -314,7 +334,6 @@ public class ImsService {
         }
     }
 
-
     public boolean validate1(Products product,Orderdto orderdto){
         if(orderdto.getQuantity()<=0){ 
             return false;    
@@ -324,77 +343,6 @@ public class ImsService {
             product.setQuantity(val);
             return true;
         }
-    }
-
-    // Create Product
-    public ResponseEntity<?> createProduct(Productdto product,BindingResult bindingResult){
-        Category category = categoryRepository.findById(product.getCategory_id()).orElse(null);
-        if(category==null){
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message","Category not found"));
-        }
-
-        Optional<Products> existingProduct = productRepository.findByProductName(product.getProduct_name());
-        
-        if (existingProduct.isPresent()) {
-            return ResponseEntity.badRequest().body(Map.of("message", "Product name already exists"));
-        }
-        List<String> errors= new ArrayList<>();
-        if (bindingResult.hasErrors()) {
-            errors.addAll(bindingResult.getAllErrors().stream()
-                    .map(error -> error.getDefaultMessage())
-                    .collect(Collectors.toList()));
-            
-        }
-        if (!errors.isEmpty()) {
-            return ResponseEntity.badRequest().body(Map.of("message",String.join(", ", errors)));
-        }
-
-        Products products=new Products();
-        products.setProduct_name(product.getProduct_name());
-        products.setCategory(category);
-        products.setPrice(product.getPrice());
-        products.setQuantity(product.getQuantity());
-
-        productRepository.save(products);
-        productCache.put(products.getProduct_id(), products);
-        return ResponseEntity.ok().body(Map.of(
-            "message", "Product successfully created"
-        ));
-    }
-
-    // Create Category
-    public ResponseEntity<?> createCategory(Category category){
-        Optional<Category> existingCategory = categoryRepository.findByProductName(category.getCategory_name());
-        
-        if (existingCategory.isPresent()) {
-            return ResponseEntity.badRequest().body(Map.of("message", "Category name already exists"));
-        }
-        categoryRepository.save(category);
-        categoryCache.put(category.getCategory_id(), category);
-        return ResponseEntity.ok().body(Map.of("message","Successfully inserted"));
-
-    }
-
-    //Create User
-    public ResponseEntity<?> createUser(User user,BindingResult bindingResult){
-        List<String> errors = new ArrayList<>();
-        try{
-            if (bindingResult.hasErrors()) {
-                errors.addAll(bindingResult.getAllErrors().stream()
-                        .map(error -> error.getDefaultMessage())
-                        .collect(Collectors.toList()));
-                
-            }
-            if (!errors.isEmpty()) {
-                return ResponseEntity.badRequest().body(Map.of("message",String.join(",", errors)));
-            }
-
-            userRepository.save(user);
-    
-            return ResponseEntity.ok().body(Map.of("message","Successfully inserted"));
-        }
-        catch (DataIntegrityViolationException e) {            
-                return ResponseEntity.badRequest().body(Map.of("message","Product with the same username and role already exists")); }
     }
 
     //Sell
