@@ -1,10 +1,14 @@
 package com.example.ims.Module;
 
+import jakarta.validation.constraints.Min;
+
 public class Orderdto {
 
     private int product_id;
    
     private int userid;
+
+    @Min(value = 1,message = "Quantity should not be negative or zero")
     private int quantity;
 
     

@@ -8,17 +8,17 @@ import jakarta.validation.constraints.NotNull;
 public class Productdto {
     
     @Column(nullable=false)
-    @NotBlank(message="It should not be blank")
+    @NotBlank(message="Product name should not be blank")
     private String product_name;
     
-    @NotNull(message = "It cant be null")
+    @NotNull(message = "Category Id should not be null")
     private int category_id;
 
-    @NotNull(message = "It cant be null")
+    @NotNull(message = "Price should not be null")
     @Min(value = 1,message = "Minimum value of price is 1")
     private double price;
 
-    @NotNull(message = "It cant be null")
+    @NotNull(message = "Quantity should not be null")
     @Min(value = 0,message = "Minimum value of quantity is 0")
     private int quantity;
     

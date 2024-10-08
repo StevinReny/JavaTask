@@ -8,6 +8,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 
 @Entity
@@ -20,6 +21,7 @@ public class User {
     @Pattern(regexp ="(?i)^(buyer|seller)$",message="Invalid role")
     private String role;
 
+    @NotBlank(message="Username should not be blank")
     private String username;
 
     public String getRole() {
