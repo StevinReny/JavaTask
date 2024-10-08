@@ -309,7 +309,7 @@ public class ImsService {
                 orderRepository.save(order);
                 productCache.put(product.getProduct_id(), product);
                 return ResponseEntity.ok().body(Map.of(
-                "message", "Order successfully created"));
+                "message", "Successfully sold out the product with id: "+product.getProduct_id()));
             }
             else{
                 return ResponseEntity.ok().body(Map.of(
@@ -355,7 +355,7 @@ public class ImsService {
             order.setQuantity(orderdto.getQuantity());
             orderRepository.save(order);
             productCache.put(product.getProduct_id(), product);
-            return ResponseEntity.ok().body(Map.of("message", "Order successfully created"));
+            return ResponseEntity.ok().body(Map.of("message", "Successfully restocked the product with id: "+product.getProduct_id()));
         }
         
         else {

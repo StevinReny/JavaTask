@@ -296,7 +296,7 @@ public class ImsServiceTest {
 
         ResponseEntity<?> responseEntity=imsService.sell(orderdto);
         assertEquals(HttpStatus.OK, responseEntity.getStatusCode());
-        assertEquals("Order successfully created", ((Map<?,?>)responseEntity.getBody()).get("message"));
+        assertEquals("Successfully sold out the product with id: " +products.getProduct_id(), ((Map<?,?>)responseEntity.getBody()).get("message"));
         verify(orderRepository,times(1)).save(any(Order.class));
     }
 
@@ -372,7 +372,7 @@ public class ImsServiceTest {
 
         ResponseEntity<?> responseEntity=imsService.restock(orderdto);
         assertEquals(HttpStatus.OK, responseEntity.getStatusCode());
-        assertEquals("Order successfully created", ((Map<?,?>)responseEntity.getBody()).get("message"));
+        assertEquals("Successfully restocked the product with id: "+products.getProduct_id(), ((Map<?,?>)responseEntity.getBody()).get("message"));
         verify(orderRepository,times(1)).save(any(Order.class));
     }
 

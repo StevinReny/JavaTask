@@ -107,3 +107,10 @@
 2024-10-08 11:13:32 [http-nio-8080-exec-2] INFO  ImsController:80 - Sell Query executed in 22ms
 2024-10-08 11:13:38 [http-nio-8080-exec-1] INFO  ImsController:80 - Sell Query executed in 28ms
 2024-10-08 11:14:12 [http-nio-8080-exec-3] INFO  ImsController:163 - Restock Query executed in 39ms
+2024-10-08 12:17:23 [http-nio-8080-exec-1] INFO  ImsController:73 - Get-Product Query executed in 436ms
+2024-10-08 12:17:36 [http-nio-8080-exec-3] INFO  ImsController:84 - Get-Category Query executed in 12ms
+2024-10-08 15:57:02 [http-nio-8080-exec-2] INFO  ImsController:73 - Get-Product Query executed in 476ms
+2024-10-08 15:59:26 [http-nio-8080-exec-5] INFO  ImsController:84 - Get-Category Query executed in 13ms
+2024-10-08 16:54:28 [http-nio-8080-exec-8] INFO  ImsController:84 - Get-Category Query executed in 16ms
+2024-10-08 16:59:45 [http-nio-8080-exec-5] INFO  ImsController:142 - Sell Query executed in 57ms
+2024-10-08 17:01:08 [http-nio-8080-exec-2] INFO  ImsController:142 - Sell Query executed in 154ms
