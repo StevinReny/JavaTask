@@ -184,75 +184,61 @@ public class ImsService {
 
     //Update Category
     public ResponseEntity<ResponseMessage> updateCategory(Integer category_id,String category_name) {
-        try{
-                Optional<Category> category=categoryRepository.findById(category_id);
-                if(category.isPresent()){
-                    category.get().setCategory_name(category_name);
-                    categoryRepository.save(category.get());
-                    categoryCache.put(category.get().getCategory_id(),category.get());
-                    ResponseMessage responseMessage=new ResponseMessage("Category updated successfully");
-                    return ResponseEntity.ok(responseMessage);
-                }
-                else{
-                    ResponseMessage responseMessage=new ResponseMessage("Category id not found");
-                    return ResponseEntity.status(HttpStatus.NOT_FOUND).body(responseMessage);
-                }
-           
+        Optional<Category> category=categoryRepository.findById(category_id);
+        if(category.isPresent()){
+            category.get().setCategory_name(category_name);
+            categoryRepository.save(category.get());
+            categoryCache.put(category.get().getCategory_id(),category.get());
+            ResponseMessage responseMessage=new ResponseMessage("Category updated successfully");
+            return ResponseEntity.ok(responseMessage);
         }
-        catch (DataIntegrityViolationException e) {  
-            ResponseMessage responseMessage = new ResponseMessage("Category name already exist");        
-            return ResponseEntity.badRequest().body(responseMessage);
-        }
-
+        else{
+            ResponseMessage responseMessage=new ResponseMessage("Category id not found");
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(responseMessage);
+        }       
     }
 
     //Update Product
     public ResponseEntity<ResponseMessage> updateProduct(Integer productId, String productName, Integer categoryId,
             Double price, Integer quantity) {
-        try{
-            if(productName == null && categoryId == null && price == null && quantity == null){
-                return ResponseEntity.badRequest()
-                            .body(new ResponseMessage("Nothing to be updated"));
+        if(productName == null && categoryId == null && price == null && quantity == null){
+            return ResponseEntity.badRequest()
+                    .body(new ResponseMessage("Nothing to be updated"));
             }
             
-            Optional<Products> optionalProduct = productRepository.findById(productId);
-            if (optionalProduct.isPresent()) {
-                Products product = optionalProduct.get();
-    
-                if (productName != null) {
-                    product.setProduct_name(productName);;
-                }
-                if (categoryId != null) {
-                    Optional<Category> category = categoryRepository.findById(categoryId);
-                    if (category.isPresent()) {
-                        product.setCategory(category.get());
-                    } else {
-                        return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                                .body(new ResponseMessage("Category not found"));
-                    }
-                }
-                if (price != null) {
-                    product.setPrice(price);
-                }
-                if (quantity != null) {
-                    product.setQuantity(quantity);
-                }
-
-                productRepository.save(product);
-                productCache.put(product.getProduct_id(), product);
-                
-                return ResponseEntity.ok(new ResponseMessage("Product updated successfully"));
-            } 
-            else {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                        .body(new ResponseMessage("Product not found"));
+        Optional<Products> optionalProduct = productRepository.findById(productId);
+        if (optionalProduct.isPresent()) {
+            Products product = optionalProduct.get();
+            if (productName != null) {
+                product.setProduct_name(productName);;
             }
+            if (categoryId != null) {
+                Optional<Category> category = categoryRepository.findById(categoryId);
+                if (category.isPresent()) {
+                    product.setCategory(category.get());
+                } 
+                else {
+                    return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                            .body(new ResponseMessage("Category not found"));
+                }
+            }
+            if (price != null) {
+                product.setPrice(price);
+            }
+            if (quantity != null) {
+                product.setQuantity(quantity);
+            }
+
+            productRepository.save(product);
+            productCache.put(product.getProduct_id(), product);
+            
+            return ResponseEntity.ok(new ResponseMessage("Product updated successfully"));
+        } 
+        else {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(new ResponseMessage("Product not found"));
         }
         
-        catch (DataIntegrityViolationException e) {  
-            ResponseMessage responseMessage = new ResponseMessage("Product name already exist");        
-            return ResponseEntity.badRequest().body(responseMessage);
-        }
     }
 
     //Sell
@@ -322,6 +308,8 @@ public class ImsService {
             order.setProduct(product);
             order.setQuantity(orderdto.getQuantity());
             orderRepository.save(order);
+            product.setQuantity(orderdto.getQuantity()+product.getQuantity());
+            productRepository.save(product);
             productCache.put(product.getProduct_id(), product);
             return ResponseEntity.ok().body(Map.of("message", "Successfully restocked the product with id: "+product.getProduct_id()));
         }

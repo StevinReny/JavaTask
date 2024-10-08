@@ -42,7 +42,7 @@ public class Products {
     @Min(value = 1,message = "Minimum value of price is 1")
     private double price;
 
-    @Min(value = 0,message = "Minimum value of quantity is 0")
+    @Min(value = 1,message = "Minimum value of quantity is 1")
     private int quantity;
 
     @OneToMany(fetch = FetchType.EAGER,mappedBy = "product",cascade = CascadeType.REMOVE,orphanRemoval = true)
