@@ -14,6 +14,8 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -29,6 +31,7 @@ public class Products {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer product_id;
 
+    @NotBlank(message="Product name should not be blank")
     @Column(unique = true)
     private String product_name;
 
@@ -36,9 +39,10 @@ public class Products {
     @JoinColumn(name = "category_id", nullable = false)
     private Category category;
 
+    @Min(value = 1,message = "Minimum value of price is 1")
     private double price;
 
-
+    @Min(value = 0,message = "Minimum value of quantity is 0")
     private int quantity;
 
     @OneToMany(fetch = FetchType.EAGER,mappedBy = "product",cascade = CascadeType.REMOVE,orphanRemoval = true)

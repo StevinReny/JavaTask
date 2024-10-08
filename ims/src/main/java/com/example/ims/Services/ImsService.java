@@ -48,7 +48,7 @@ public class ImsService {
     // Create Product
     public ResponseEntity<?> createProduct(Productdto product,BindingResult bindingResult){
         Category category = categoryRepository.findById(product.getCategory_id()).orElse(null);
-        if(category==null){
+        if(category == null){
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message","Category not found"));
         }
 
@@ -76,9 +76,7 @@ public class ImsService {
 
         productRepository.save(products);
         productCache.put(products.getProduct_id(), products);
-        return ResponseEntity.ok().body(Map.of(
-            "message", "Product successfully created"
-        ));
+        return ResponseEntity.ok().body(Map.of("message", "Product created successfully"));
     }
 
     // Create Category
@@ -90,7 +88,7 @@ public class ImsService {
         }
         categoryRepository.save(category);
         categoryCache.put(category.getCategory_id(), category);
-        return ResponseEntity.ok().body(Map.of("message","Successfully inserted"));
+        return ResponseEntity.ok().body(Map.of("message","Category created successfully"));
 
     }
 
@@ -110,10 +108,10 @@ public class ImsService {
 
             userRepository.save(user);
     
-            return ResponseEntity.ok().body(Map.of("message","Successfully inserted"));
+            return ResponseEntity.ok().body(Map.of("message","User created successfully"));
         }
         catch (DataIntegrityViolationException e) {            
-                return ResponseEntity.badRequest().body(Map.of("message","Product with the same username and role already exists")); }
+                return ResponseEntity.badRequest().body(Map.of("message","User with the same username and role already exists")); }
     }
 
     //Get Product - by productId, categoryId
@@ -127,35 +125,34 @@ public class ImsService {
         }
         else if(category_id!=null){
             if(categoryRepository.existsById(category_id)){
-                List<Products>temp= productRepository.findByCategory_id(category_id);
-               if(!temp.isEmpty()){
-                   return ResponseEntity.ok(temp);
-               }
-               else{
-                   return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message","No product under the category"));
-               }
+                List<Products> products= productRepository.findByCategory_id(category_id);
+                if(!products.isEmpty()){
+                    return ResponseEntity.ok(products);
+                }
+                else{
+                    return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message","No product under the category"));
+                }
             }
             else{
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message","Category not found"));
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message","Category id not found"));
             }
         }
         else if (product_id!=null){
             if(productCache.get(product_id)==null){
-                Optional<Products> temp=productRepository.findById(product_id);
-                if(temp.isPresent()){
-                productCache.put(temp.get().getProduct_id(), temp.get());
-                return ResponseEntity.ok(temp);
-           }
-           else{
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message","Product id not found"));
+                Optional<Products> product=productRepository.findById(product_id);
+                if(product.isPresent()){
+                    productCache.put(product.get().getProduct_id(), product.get());
+                    return ResponseEntity.ok(product);
+                }
+                else {
+                    return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message","Product id not found"));
+                }
+            }
+            else{
+                return ResponseEntity.ok(productCache.get(product_id));
            }
         }
-           else{
-            return ResponseEntity.ok(productCache.get(product_id));
-            
-           }
-        }
-        else{
+        else {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message","An error occured"));
         }
     }
@@ -181,36 +178,29 @@ public class ImsService {
 
     //Delete Category
     public ResponseEntity<ResponseMessage> deleteCategory(Integer category_id) {
-        if(categoryRepository.existsById(category_id)){
-            Optional<Category> category=categoryRepository.findById(category_id);
-            if(category.isPresent()){
-                Category categoryDetails=category.get();
-                if(productRepository.findByCategory_id(category_id).isEmpty()){
-                    categoryRepository.deleteById(category_id);
-                    categoryCache.remove(category_id);
-                    ResponseMessage responseMessage=new ResponseMessage("Successfully deleted " +categoryDetails.getCategory_name()+ " from the Inventory management system");
-                    return ResponseEntity.ok(responseMessage);
-                }
-                else{
-                    ResponseMessage responseMessage=new ResponseMessage("Cannot delete " +categoryDetails.getCategory_name()+ " because it has products under it");
-                    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(responseMessage);                    
-                }
+        Optional<Category> category = categoryRepository.findById(category_id);
+        
+        if (category.isPresent()) {
+            Category categoryDetails = category.get();
+            
+            if (productRepository.findByCategory_id(category_id).isEmpty()) {
+                categoryRepository.deleteById(category_id);
+                categoryCache.remove(category_id);
+                ResponseMessage responseMessage = new ResponseMessage("Successfully deleted " + categoryDetails.getCategory_name() + " from the Inventory management system");
+                return ResponseEntity.ok(responseMessage);
+            } else {
+                ResponseMessage responseMessage = new ResponseMessage("Cannot delete " + categoryDetails.getCategory_name() + " because it has products under it");
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(responseMessage);
             }
-            else{
-                ResponseMessage responseMessage=new ResponseMessage("Category not found");
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(responseMessage);
-            }
-        }
-
-        else{
-            ResponseMessage responseMessage=new ResponseMessage("Category not found");
+        } else {
+            ResponseMessage responseMessage = new ResponseMessage("Category id not found");
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(responseMessage);
         }
     }
+    
 
     //Delete Product
     public ResponseEntity<ResponseMessage> deleteProduct(Integer productId) {
-        // if(productRepository.existsById(productId)){
             Optional<Products> product=productRepository.findById(productId);
             if(product.isPresent()){
                 productRepository.deleteById(productId);
@@ -219,14 +209,9 @@ public class ImsService {
                 return ResponseEntity.ok(responseMessage);
             }
             else{
-                ResponseMessage responseMessage=new ResponseMessage("Product not found");
+                ResponseMessage responseMessage=new ResponseMessage("Product id not found");
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body(responseMessage);
             }
-        // }
-        // else{
-        //     ResponseMessage responseMessage=new ResponseMessage("Product not found");
-        //     return ResponseEntity.status(HttpStatus.NOT_FOUND).body(responseMessage);
-        // }
     }
 
     //Update Category
@@ -234,9 +219,6 @@ public class ImsService {
         try{
                 Optional<Category> category=categoryRepository.findById(category_id);
                 if(category.isPresent()){
-                    // if(category.get().getCategory_name().equals(category_name)){
-                    //     return ResponseEntity.ok(new ResponseMessage("Same category name"));
-                    // }
                     category.get().setCategory_name(category_name);
                     categoryRepository.save(category.get());
                     categoryCache.put(category.get().getCategory_id(),category.get());
@@ -244,7 +226,7 @@ public class ImsService {
                     return ResponseEntity.ok(responseMessage);
                 }
                 else{
-                    ResponseMessage responseMessage=new ResponseMessage("Category not found");
+                    ResponseMessage responseMessage=new ResponseMessage("Category id not found");
                     return ResponseEntity.status(HttpStatus.NOT_FOUND).body(responseMessage);
                 }
            
@@ -260,64 +242,14 @@ public class ImsService {
     public ResponseEntity<ResponseMessage> updateProduct(Integer productId, String productName, Integer categoryId,
             Double price, Integer quantity) {
         try{
-            // if (productRepository.existsById(productId)) {
                 if(productName == null && categoryId == null && price == null && quantity == null){
                     return ResponseEntity.badRequest()
                                 .body(new ResponseMessage("Nothing to be updated"));
                 }
                 
-                // if(productCache.get(productId)!=null){
-                //     Products products=productCache.get(productId);
-                //     if (quantity != null && quantity < 0) {
-                //         return ResponseEntity.badRequest()
-                //                 .body(new ResponseMessage("Quantity cannot be negative"));
-                //     }
-    
-                //     if (price != null && price < 0) {
-                //         return ResponseEntity.badRequest()
-                //                 .body(new ResponseMessage("Price cannot be negative"));
-                //     }
-        
-                //     if (productName != null) {
-                //         products.setProduct_name(productName);;
-                //     }
-                //     if (categoryId != null) {
-                //         Optional<Category> category = categoryRepository.findById(categoryId);
-                //         if (category.isPresent()) {
-                //             products.setCategory(category.get());
-                //         } else {
-                //             return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                //                     .body(new ResponseMessage("Category not found"));
-                //         }
-                //     }
-                //     if (price != null) {
-                //         products.setPrice(price);
-                //     }
-                //     if (quantity != null) {
-                //         products.setQuantity(quantity);
-                //     }
-    
-                //     // Save the updated product
-                //     productRepository.save(products);
-                //     productCache.put(productId, products);
-                //     System.out.println(productCache);
-                //     return ResponseEntity.ok(new ResponseMessage("Product updated successfully"));
-                // }
                 Optional<Products> optionalProduct = productRepository.findById(productId);
                 if (optionalProduct.isPresent()) {
                     Products product = optionalProduct.get();
-                    // if(product.getProduct_name().equals(productName)){
-                    //     return ResponseEntity.badRequest().body(new ResponseMessage("Same product name"));
-                    // }
-                    if (quantity != null && quantity < 0) {
-                        return ResponseEntity.badRequest()
-                                .body(new ResponseMessage("Quantity cannot be negative"));
-                    }
-    
-                    if (price != null && price < 0) {
-                        return ResponseEntity.badRequest()
-                                .body(new ResponseMessage("Price cannot be negative"));
-                    }
         
                     if (productName != null) {
                         product.setProduct_name(productName);;
@@ -340,49 +272,19 @@ public class ImsService {
     
                     productRepository.save(product);
                     productCache.put(product.getProduct_id(), product);
-                    // System.out.println(productCache);
+                    
                     return ResponseEntity.ok(new ResponseMessage("Product updated successfully"));
                 } 
                 else {
                     return ResponseEntity.status(HttpStatus.NOT_FOUND)
                             .body(new ResponseMessage("Product not found"));
                 }
-            // } 
-            
-            // else {
-            //     return ResponseEntity.status(HttpStatus.NOT_FOUND)
-            //             .body(new ResponseMessage("Product not found"));
-            // }
         }
         catch (DataIntegrityViolationException e) {  
             ResponseMessage responseMessage = new ResponseMessage("Product name already exist");        
             return ResponseEntity.badRequest().body(responseMessage);
         }
     }
-
-
-    public boolean validate(Products product,Orderdto orderdto){
-        if(product.getQuantity()>=orderdto.getQuantity()){
-            int val=product.getQuantity()-orderdto.getQuantity();
-            product.setQuantity(val);
-            return true;
-        }
-        else{
-            return false;
-        }
-    }
-
-    public boolean validate1(Products product,Orderdto orderdto){
-        if(orderdto.getQuantity()<=0){ 
-            return false;    
-        }
-        else{
-            int val=product.getQuantity()+orderdto.getQuantity();
-            product.setQuantity(val);
-            return true;
-        }
-    }
-
 
     //Sell
     public ResponseEntity<?> createOrder(Orderdto orderdto){
@@ -396,8 +298,8 @@ public class ImsService {
         if(product==null){
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message","Product not found"));
         }
-        if(user.getRole().equalsIgnoreCase("buyer")){
 
+        if(user.getRole().equalsIgnoreCase("buyer")){
             if(validate(product, orderdto)){
                 Order order=new Order();
                 order.setUser(user);
@@ -419,6 +321,17 @@ public class ImsService {
         }
     }
 
+    public boolean validate(Products product,Orderdto orderdto){
+        if(product.getQuantity()>=orderdto.getQuantity()){
+            int val=product.getQuantity()-orderdto.getQuantity();
+            product.setQuantity(val);
+            return true;
+        }
+        else{
+            return false;
+        }
+    }
+
     //Restock
     public ResponseEntity<?> restock(Orderdto orderdto){
         
@@ -429,19 +342,14 @@ public class ImsService {
         if(user==null){
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message"," User not found"));
         }
-        // if(productCache.get(orderdto.getProduct_id())!=null){
-        //     Products products=productCache.get(orderdto.getProduct_id());
-        //     ResponseEntity<?> message=validation(products, user, orderdto);
-        //     productRepository.save(products);
-        //     return message;
-        // }
+
         if(product==null){
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message"," Product not found"));
         }
         else{
             ResponseEntity<?> message=validation(product, user, orderdto);
             return message;
-        }  // System.out.println(user.getRole());
+        } 
         
     }
 
@@ -469,5 +377,17 @@ public class ImsService {
             "message", "No access to restock"));
         }
     }
+
+    public boolean validate1(Products product,Orderdto orderdto){
+        if(orderdto.getQuantity()<=0){ 
+            return false;    
+        }
+        else{
+            int val=product.getQuantity()+orderdto.getQuantity();
+            product.setQuantity(val);
+            return true;
+        }
+    }
+
 }
 

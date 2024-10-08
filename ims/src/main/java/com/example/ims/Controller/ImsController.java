@@ -29,6 +29,8 @@ import com.example.ims.Services.ImsService;
 
 
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
 
 @RestController
 @RequestMapping("/api/ims")
@@ -49,7 +51,7 @@ public class ImsController {
     }
 
     @PostMapping("/createcategory")
-    public ResponseEntity<?> createcategory(@RequestBody Category category){
+    public ResponseEntity<?> createcategory(@RequestBody @Valid Category category){
         StopWatch stopWatch = new StopWatch();
         stopWatch.start();
         ResponseEntity<?> response=getService.createCategory(category);
@@ -70,7 +72,7 @@ public class ImsController {
     }   
 
     @PutMapping("/sell")
-    public ResponseEntity<?> createOrder(@RequestBody Orderdto orderdto) {
+    public ResponseEntity<?> createOrder(@Valid @RequestBody Orderdto orderdto) {
         StopWatch stopWatch = new StopWatch();
         stopWatch.start();
         ResponseEntity<?> response=getService.createOrder(orderdto);
@@ -125,8 +127,8 @@ public class ImsController {
 
     @PutMapping("/updateCategory")
     public ResponseEntity<?> updateCategory(@RequestParam Integer categoryId,
-            @RequestParam String categoryName){
-            
+        @Valid @RequestParam String categoryName){
+
             StopWatch stopWatch = new StopWatch();
             stopWatch.start();
             ResponseEntity<ResponseMessage> response=getService.updateCategory(categoryId, categoryName);
@@ -136,7 +138,7 @@ public class ImsController {
     }
 
     @PutMapping("/updateProduct")
-    public ResponseEntity<?> updateCategory(@RequestParam Integer productId,
+    public ResponseEntity<?> updateProduct(@RequestParam Integer productId,
         @RequestParam(required = false) String productName,
         @RequestParam(required = false) Integer categoryId,
         @RequestParam(required = false) Double price,
@@ -153,7 +155,7 @@ public class ImsController {
 
 
     @PutMapping("/restock")
-    public ResponseEntity<?> restock(@RequestBody Orderdto orderdto) {
+    public ResponseEntity<?> restock(@Valid @RequestBody Orderdto orderdto) {
         StopWatch stopWatch = new StopWatch();
         stopWatch.start();
         ResponseEntity<?> response=getService.restock(orderdto);
