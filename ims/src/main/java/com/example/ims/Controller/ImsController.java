@@ -1,6 +1,5 @@
 package com.example.ims.Controller;
 
-
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -14,23 +13,14 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-
 import com.example.ims.Module.Category;
 import com.example.ims.Module.Orderdto;
 import com.example.ims.Module.Productdto;
-
-
 import com.example.ims.Module.User;
-
 import com.example.ims.Module.ResponseMessage;
-
-
 import com.example.ims.Services.ImsService;
-
-
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.NotBlank;
+
 
 @RestController
 @RequestMapping("/api/ims")
@@ -71,17 +61,7 @@ public class ImsController {
         
     }   
 
-    @PutMapping("/sell")
-    public ResponseEntity<?> createOrder(@Valid @RequestBody Orderdto orderdto) {
-        StopWatch stopWatch = new StopWatch();
-        stopWatch.start();
-        ResponseEntity<?> response=getService.createOrder(orderdto);
-        stopWatch.stop();
-        logger.info("Sell Query executed in " + stopWatch.getTotalTimeMillis() + "ms");
-        return response;
-    }
-
-    @GetMapping("/filterproduct")
+    @GetMapping("/getproduct")
     public ResponseEntity<?> getProduct(
         @RequestParam(required = false) Integer product_id,
         @RequestParam(required = false) Integer category_id) {
@@ -94,7 +74,7 @@ public class ImsController {
         return response;
     }
 
-    @GetMapping("/filtercategory")
+    @GetMapping("/getcategory")
     public ResponseEntity<?> getCategory(
         @RequestParam (required = false) Integer category_id){
             StopWatch stopWatch = new StopWatch();
@@ -153,6 +133,15 @@ public class ImsController {
         }
 
 
+    @PutMapping("/sell")
+    public ResponseEntity<?> sell(@Valid @RequestBody Orderdto orderdto) {
+        StopWatch stopWatch = new StopWatch();
+        stopWatch.start();
+        ResponseEntity<?> response=getService.sell(orderdto);
+        stopWatch.stop();
+        logger.info("Sell Query executed in " + stopWatch.getTotalTimeMillis() + "ms");
+        return response;
+    }
 
     @PutMapping("/restock")
     public ResponseEntity<?> restock(@Valid @RequestBody Orderdto orderdto) {
