@@ -19,7 +19,7 @@ public class Productdto {
     private double price;
 
     @NotNull(message = "Quantity should not be null")
-    @Min(value = 0,message = "Minimum value of quantity is 0")
+    @Min(value = 1,message = "Minimum value of quantity is 1")
     private int quantity;
     
     public String getProduct_name() {

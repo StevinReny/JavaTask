@@ -3,6 +3,7 @@ package com.example.ims.Exception;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.TransactionSystemException;
@@ -42,5 +43,15 @@ public class GlobalExceptionHandler {
             errors.put("error", "An unexpected error occurred");
             return new ResponseEntity<>(errors, HttpStatus.INTERNAL_SERVER_ERROR);
         }
+    }
+
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<Map<String, String>> handleDataIntegrityViolationExceptions(DataIntegrityViolationException ex) {
+        Map<String, String> errors = new HashMap<>();
+        
+        // You can log the exception message or extract specific information
+        errors.put("error", ex.getMostSpecificCause().getMessage());
+
+        return new ResponseEntity<>(errors, HttpStatus.BAD_REQUEST);
     }
 }

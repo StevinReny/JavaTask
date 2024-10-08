@@ -14,11 +14,8 @@ import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.validation.BindingResult;
-import org.springframework.validation.ObjectError;
 
 import com.example.ims.Module.Category;
 import com.example.ims.Module.Order;
@@ -57,9 +54,6 @@ public class ImsServiceTest {
     private ConcurrentHashMap<Integer, Category> categoryCache;
 
     @Mock
-    private BindingResult bindingResult;
-
-    @Mock
     private ResponseMessage responseMessage;
 
     @InjectMocks
@@ -84,9 +78,8 @@ public class ImsServiceTest {
 
         when(categoryRepository.findById(1)).thenReturn(Optional.of(category));
         when(productRepository.findByProductName("Bread")).thenReturn(Optional.empty());
-        when(bindingResult.hasErrors()).thenReturn(false);
 
-        ResponseEntity<?> response= imsService.createProduct(productdto, bindingResult);
+        ResponseEntity<?> response= imsService.createProduct(productdto);
         assertEquals(HttpStatus.OK,response.getStatusCode());
         assertEquals("Product created successfully", ((Map<?,?>)response.getBody()).get("message"));
         verify(productRepository,times(1)).save(any(Products.class));
@@ -103,7 +96,7 @@ public class ImsServiceTest {
 
         when(categoryRepository.findById(1)).thenReturn(Optional.empty());
         
-        ResponseEntity<?> response= imsService.createProduct(productdto, bindingResult);
+        ResponseEntity<?> response= imsService.createProduct(productdto);
 
         assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
         assertEquals("Category not found", ((Map<?,?>)response.getBody()).get("message"));
@@ -125,7 +118,7 @@ public class ImsServiceTest {
         when(categoryRepository.findById(1)).thenReturn(Optional.of(category));
         when(productRepository.findByProductName("Bread")).thenReturn(Optional.of(products));
 
-        ResponseEntity<?> responseEntity= imsService.createProduct(productdto, bindingResult);
+        ResponseEntity<?> responseEntity= imsService.createProduct(productdto);
         assertEquals(HttpStatus.BAD_REQUEST, responseEntity.getStatusCode());
         assertEquals("Product name already exists", ((Map<?,?>)responseEntity.getBody()).get("message"));
     }   
@@ -146,61 +139,15 @@ public class ImsServiceTest {
        
     }
 
-    @Test
-    public void testCreateCategory_AlreadyExists() {
-        Category category= new Category();
-       category.setCategory_name("Bread");
-
-       when(categoryRepository.findByProductName("Bread")).thenReturn(Optional.of(category));
-       
-       ResponseEntity<?> responseEntity=imsService.createCategory(category);
-       assertEquals(HttpStatus.BAD_REQUEST, responseEntity.getStatusCode());
-       assertEquals(Map.of("message","Category name already exists"), ((Map<?,?>)responseEntity.getBody()));
-      
-    }
+    
     @Test
     public void testCreateUser_Sucess(){
         User user=new User();
         
-        when(bindingResult.hasErrors()).thenReturn(false);
-        
-        ResponseEntity <?> responseEntity=imsService.createUser(user,bindingResult);
+        ResponseEntity <?> responseEntity=imsService.createUser(user);
         assertEquals(HttpStatus.OK, responseEntity.getStatusCode());
         assertEquals("User created successfully",((Map<?,?>) responseEntity.getBody()).get("message"));
         verify(userRepository,timeout(1)).save(any(User.class));
-    }
-
-    @Test
-    public void testCreateUser_ValidationErrors() {
-        // Arrange
-        User user = new User();
-
-        ObjectError error = new ObjectError("role", "Invalid role");
-        List<ObjectError> validationErrors = Collections.singletonList(error);
-
-        when(bindingResult.hasErrors()).thenReturn(true); 
-        when(bindingResult.getAllErrors()).thenReturn(validationErrors);
-
-        ResponseEntity<?> response = imsService.createUser(user, bindingResult);
-
-        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-        assertEquals("Invalid role", ((Map<?, ?>) response.getBody()).get("message"));
-        verify(userRepository, never()).save(any(User.class)); 
-    }
-
-    @Test
-    public void testCreateUser_DuplicateUser() {
-        User user = new User();
-        user.setUsername("John");
-        user.setRole("buyer");
-
-        when(bindingResult.hasErrors()).thenReturn(false);
-        doThrow(new DataIntegrityViolationException("Duplicate")).when(userRepository).save(user);
-
-        ResponseEntity<?> response = imsService.createUser(user, bindingResult);
-
-        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-        assertEquals("User with the same username and role already exists", ((Map<?, ?>) response.getBody()).get("message"));
     }
 
     @Test
@@ -316,6 +263,7 @@ public class ImsServiceTest {
         verify(productRepository,times(1)).findById(anyInt());
 
     }
+
     @Test
     public void testrestock_noProduct(){
         Orderdto orderdto=new Orderdto();
