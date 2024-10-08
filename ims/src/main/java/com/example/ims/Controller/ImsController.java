@@ -4,7 +4,6 @@ import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.StopWatch;
-import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -31,10 +30,10 @@ public class ImsController {
     
     private Logger logger = Logger.getLogger(ImsController.class);
     @PostMapping("/createproduct")
-    public ResponseEntity<?> createProduct(@RequestBody @Valid Productdto product,BindingResult bindingResult) {
+    public ResponseEntity<?> createProduct(@RequestBody @Valid Productdto product) {
         StopWatch stopWatch = new StopWatch();
         stopWatch.start();
-        ResponseEntity<?> response=getService.createProduct(product, bindingResult);
+        ResponseEntity<?> response=getService.createProduct(product);
         stopWatch.stop();
         logger.info("Create-Product Query executed in " + stopWatch.getTotalTimeMillis() + "ms");
         return response;
@@ -51,10 +50,10 @@ public class ImsController {
     }
 
     @PostMapping("/createuser")
-    public ResponseEntity<?> createUser(@RequestBody @Valid User user,BindingResult bindingResult){
+    public ResponseEntity<?> createUser(@RequestBody @Valid User user){
         StopWatch stopWatch = new StopWatch();
         stopWatch.start();
-        ResponseEntity<?> response=getService.createUser(user, bindingResult);
+        ResponseEntity<?> response=getService.createUser(user);
         stopWatch.stop();
         logger.info("Create-User Query executed in " + stopWatch.getTotalTimeMillis() + "ms");
         return response;

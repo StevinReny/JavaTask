@@ -2,7 +2,6 @@ package com.example.ims.Services;
 
 import java.util.List;
 import java.util.Map;
-import java.util.ArrayList;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -11,9 +10,6 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-
-import org.springframework.validation.BindingResult;
-import java.util.stream.Collectors;
 
 import com.example.ims.Module.Category;
 import com.example.ims.Module.Order;
@@ -46,26 +42,11 @@ public class ImsService {
     private ConcurrentHashMap<Integer, Category> categoryCache = new ConcurrentHashMap<>();
 
     // Create Product
-    public ResponseEntity<?> createProduct(Productdto product,BindingResult bindingResult){
+    public ResponseEntity<?> createProduct(Productdto product){
+        //Check whether the category is found or not
         Category category = categoryRepository.findById(product.getCategory_id()).orElse(null);
         if(category == null){
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message","Category not found"));
-        }
-
-        Optional<Products> existingProduct = productRepository.findByProductName(product.getProduct_name());
-        
-        if (existingProduct.isPresent()) {
-            return ResponseEntity.badRequest().body(Map.of("message", "Product name already exists"));
-        }
-        List<String> errors= new ArrayList<>();
-        if (bindingResult.hasErrors()) {
-            errors.addAll(bindingResult.getAllErrors().stream()
-                    .map(error -> error.getDefaultMessage())
-                    .collect(Collectors.toList()));
-            
-        }
-        if (!errors.isEmpty()) {
-            return ResponseEntity.badRequest().body(Map.of("message",String.join(", ", errors)));
         }
 
         Products products=new Products();
@@ -81,11 +62,7 @@ public class ImsService {
 
     // Create Category
     public ResponseEntity<?> createCategory(Category category){
-        Optional<Category> existingCategory = categoryRepository.findByProductName(category.getCategory_name());
         
-        if (existingCategory.isPresent()) {
-            return ResponseEntity.badRequest().body(Map.of("message", "Category name already exists"));
-        }
         categoryRepository.save(category);
         categoryCache.put(category.getCategory_id(), category);
         return ResponseEntity.ok().body(Map.of("message","Category created successfully"));
@@ -93,21 +70,10 @@ public class ImsService {
     }
 
     //Create User
-    public ResponseEntity<?> createUser(User user,BindingResult bindingResult){
-        List<String> errors = new ArrayList<>();
+    public ResponseEntity<?> createUser(User user){
+       
         try{
-            if (bindingResult.hasErrors()) {
-                errors.addAll(bindingResult.getAllErrors().stream()
-                        .map(error -> error.getDefaultMessage())
-                        .collect(Collectors.toList()));
-                
-            }
-            if (!errors.isEmpty()) {
-                return ResponseEntity.badRequest().body(Map.of("message",String.join(",", errors)));
-            }
-
             userRepository.save(user);
-    
             return ResponseEntity.ok().body(Map.of("message","User created successfully"));
         }
         catch (DataIntegrityViolationException e) {            
@@ -116,13 +82,15 @@ public class ImsService {
 
     //Get Product - by productId, categoryId
     public ResponseEntity<?> getProduct(Integer product_id,Integer category_id){
-        
+
         if(product_id==null && category_id==null){
             return ResponseEntity.ok(productRepository.findAll());
         }
+
         else if(product_id!=null && category_id!=null){
             return ResponseEntity.badRequest().body(Map.of("message","Not allowed to enter both"));
         }
+
         else if(category_id!=null){
             if(categoryRepository.existsById(category_id)){
                 List<Products> products= productRepository.findByCategory_id(category_id);
@@ -182,7 +150,7 @@ public class ImsService {
         
         if (category.isPresent()) {
             Category categoryDetails = category.get();
-            
+            // Check if there are products under the category
             if (productRepository.findByCategory_id(category_id).isEmpty()) {
                 categoryRepository.deleteById(category_id);
                 categoryCache.remove(category_id);
