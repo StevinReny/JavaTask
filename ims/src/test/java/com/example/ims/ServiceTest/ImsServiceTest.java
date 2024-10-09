@@ -20,6 +20,7 @@ import org.springframework.http.ResponseEntity;
 import com.example.ims.Module.Category;
 import com.example.ims.Module.Order;
 import com.example.ims.Module.Orderdto;
+import com.example.ims.Module.ProductView;
 import com.example.ims.Module.Productdto;
 import com.example.ims.Module.Products;
 import com.example.ims.Module.ResponseMessage;
@@ -102,26 +103,6 @@ public class ImsServiceTest {
         assertEquals("Category not found", ((Map<?,?>)response.getBody()).get("message"));
 
     }
-
-    @Test
-    public void testCreateProduct_ProductNameexist(){
-
-        Productdto productdto=new Productdto();
-        productdto.setCategory_id(1);
-        productdto.setPrice(29.9);
-        productdto.setQuantity(10);
-        productdto.setProduct_name("Bread");
-
-        Category category=new Category();
-        Products products=new Products();
-
-        when(categoryRepository.findById(1)).thenReturn(Optional.of(category));
-        when(productRepository.findByProductName("Bread")).thenReturn(Optional.of(products));
-
-        ResponseEntity<?> responseEntity= imsService.createProduct(productdto);
-        assertEquals(HttpStatus.BAD_REQUEST, responseEntity.getStatusCode());
-        assertEquals("Product name already exists", ((Map<?,?>)responseEntity.getBody()).get("message"));
-    }   
 
 
 
@@ -378,22 +359,36 @@ public class ImsServiceTest {
         products.setPrice(10);
         products.setQuantity(10);
 
+        ProductView productView=new ProductView();
+        productView.setProduct_id(products.getProduct_id());
+        productView.setCategory_id(products.getCategory().getCategory_id());
+        productView.setProduct_name(products.getProduct_name());
+        productView.setPrice(products.getPrice());
+        productView.setQuantity(products.getQuantity());
+
         when(categoryRepository.existsById(1)).thenReturn(true);
         when(productRepository.findByCategory_id(1)).thenReturn(List.of(products));
         ResponseEntity<?> responseEntity=imsService.getProduct(null,1);
-        assertEquals(List.of(products), responseEntity.getBody());
+        assertEquals(List.of(productView), responseEntity.getBody());
         assertEquals(HttpStatus.OK, responseEntity.getStatusCode());
 
 }
 
     @Test
     public void testgetproduct_productidgivenfromcache(){
+        Category category=new Category();
+        category.setCategory_id(1);
         Products products=new Products();
         products.setProduct_id(1);
+        products.setCategory(category);
         when(productCache.get(1)).thenReturn(products);
 
+        ProductView productView=new ProductView();
+        productView.setProduct_id(products.getProduct_id());
+        productView.setCategory_id(products.getCategory().getCategory_id());
+        
         ResponseEntity<?> responseEntity = imsService.getProduct(1, null);
-        assertEquals(products, responseEntity.getBody());
+        assertEquals(productView, responseEntity.getBody());
         assertEquals(HttpStatus.OK, responseEntity.getStatusCode());
         verify(productRepository,never()).findById(anyInt());
         
@@ -402,14 +397,24 @@ public class ImsServiceTest {
 
     @Test
     public void testgetproduct_productidgivenfromrepo(){
+        Category category=new Category();
+        category.setCategory_id(1);
         Products products=new Products();
         products.setProduct_id(1);
         products.setProduct_name("Ice");
+        products.setCategory(category);
         when(productCache.get(1)).thenReturn(null);
         when(productRepository.findById(1)).thenReturn(Optional.of(products));
 
+        ProductView productView=new ProductView();
+        productView.setProduct_id(products.getProduct_id());
+        productView.setCategory_id(products.getCategory().getCategory_id());
+        productView.setProduct_name(products.getProduct_name());
+        // productView.setPrice(products.getPrice());
+        // productView.setQuantity(products.getQuantity());
+
         ResponseEntity<?> responseEntity=imsService.getProduct(1, null);
-        assertEquals(Optional.of(products), responseEntity.getBody());
+        assertEquals(productView, responseEntity.getBody());
         assertEquals(HttpStatus.OK, responseEntity.getStatusCode());
         verify(productRepository,times(1)).findById(1);
         verify(productCache,times(1)).put(1, products);

@@ -1,12 +1,13 @@
 package com.example.ims.Services;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.dao.DataIntegrityViolationException;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -14,6 +15,7 @@ import org.springframework.stereotype.Service;
 import com.example.ims.Module.Category;
 import com.example.ims.Module.Order;
 import com.example.ims.Module.Orderdto;
+import com.example.ims.Module.ProductView;
 import com.example.ims.Module.Productdto;
 import com.example.ims.Module.Products;
 import com.example.ims.Module.ResponseMessage;
@@ -72,12 +74,9 @@ public class ImsService {
     //Create User
     public ResponseEntity<?> createUser(User user){
        
-        try{
             userRepository.save(user);
             return ResponseEntity.ok().body(Map.of("message","User created successfully"));
-        }
-        catch (DataIntegrityViolationException e) {            
-                return ResponseEntity.badRequest().body(Map.of("message","User with the same username and role already exists")); }
+        
     }
 
     //Get Product - by productId, categoryId
@@ -94,8 +93,20 @@ public class ImsService {
         else if(category_id!=null){
             if(categoryRepository.existsById(category_id)){
                 List<Products> products= productRepository.findByCategory_id(category_id);
-                if(!products.isEmpty()){
-                    return ResponseEntity.ok(products);
+                List<ProductView> productViews=new ArrayList<>();
+
+                for (Products product:products){
+                    ProductView productView=new ProductView();
+                    productView.setProduct_id(product.getProduct_id());
+                    productView.setProduct_name(product.getProduct_name());
+                    productView.setCategory_id(product.getCategory().getCategory_id());
+                    productView.setPrice(product.getPrice());
+                    productView.setQuantity(product.getQuantity());
+                    productViews.add(productView);
+                    
+                }
+                if(!productViews.isEmpty()){
+                    return ResponseEntity.ok(productViews);
                 }
                 else{
                     return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message","No product under the category"));
@@ -108,16 +119,31 @@ public class ImsService {
         else if (product_id!=null){
             if(productCache.get(product_id)==null){
                 Optional<Products> product=productRepository.findById(product_id);
+                
                 if(product.isPresent()){
-                    productCache.put(product.get().getProduct_id(), product.get());
-                    return ResponseEntity.ok(product);
+                    ProductView productView=new ProductView();
+                    productView.setProduct_id(product.get().getProduct_id());
+                    productView.setProduct_name(product.get().getProduct_name());
+                    productView.setCategory_id(product.get().getCategory().getCategory_id());
+                    productView.setPrice(product.get().getPrice());
+                    productView.setQuantity(product.get().getQuantity());
+                    productCache.put(product_id,product.get());
+                    return ResponseEntity.ok(productView);
                 }
                 else {
                     return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message","Product id not found"));
                 }
+                
             }
             else{
-                return ResponseEntity.ok(productCache.get(product_id));
+                Products product=productCache.get(product_id);
+                ProductView productView=new ProductView();
+                productView.setProduct_id(product.getProduct_id());
+                productView.setProduct_name(product.getProduct_name());
+                productView.setCategory_id(product.getCategory().getCategory_id());
+                productView.setPrice(product.getPrice());
+                productView.setQuantity(product.getQuantity());
+                return ResponseEntity.ok(productView);
            }
         }
         else {
